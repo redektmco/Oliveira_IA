@@ -1,0 +1,55 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "vite",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "functions": {
+    "api/chat.ts": {
+      "maxDuration": 60
+    },
+    "api/whatsapp-status.ts": {
+      "maxDuration": 30
+    },
+    "api/whatsapp-webhook.ts": {
+      "maxDuration": 60
+    },
+    "api/whatsapp-worker.ts": {
+      "maxDuration": 60
+    },
+    "api/whatsapp-admin.ts": {
+      "maxDuration": 60
+    },
+    "api/whatsapp-send.ts": {
+      "maxDuration": 60
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/((?!api/|assets/|favicon.svg).*)",
+      "destination": "/index.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "camera=(), microphone=(), geolocation=()"
+        }
+      ]
+    }
+  ]
+}
