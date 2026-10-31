@@ -24,7 +24,7 @@ O requisito seguro `SUPABASE_ACCESS_TOKEN`, com destino `api.supabase.com`, est�
 ## 1. Preparar o Supabase
 
 1. Abra o SQL Editor do projeto Supabase correto.
-2. Execute os arquivos de `supabase/migrations/` em ordem: `202610200001_initial.sql` e `202610300002_whatsapp.sql`. Eles criam tabelas, índices, RLS, funções de quota/gravação e a fila WhatsApp. As migrações podem ser reaplicadas neste esquema. Para verificar as regras em um banco descartável, veja `supabase/tests/security.sql` e as instruções em `supabase/README.md`; o teste usa transação e rollback.
+2. Execute os arquivos de `supabase/migrations/` em ordem: `202610200001_initial.sql` , `202610300002_whatsapp.sql` e `202610300003_crm_triage.sql`. Eles criam tabelas, índices, RLS, funções de quota/gravação e a fila WhatsApp. As migrações podem ser reaplicadas neste esquema. Para verificar as regras em um banco descartável, veja `supabase/tests/security.sql` e as instruções em `supabase/README.md`; o teste usa transação e rollback.
 3. Em Authentication, habilite e-mail/senha e configure confirmação de e-mail. Crie sua conta e confirme o endereço.
 4. Para piloto privado, desabilite novas inscrições públicas após criar/convidar as contas autorizadas. O limite de IA é por usuário; abrir cadastros para qualquer pessoa exige controle adicional de convites, abuso e orçamento global.
 5. Defina **Site URL** para o domínio final da Vercel e adicione esse domínio nas **Redirect URLs** do Auth. Para desenvolvimento, adicione também o endereço local da aplicação na porta 5173. Adicione domínios de preview somente quando necessário.
@@ -100,8 +100,18 @@ Para outro destino, vincule uma conta e agente existentes em `whatsapp_channels`
 
 Os números terminados em **8747** e **1111**, nas duas representações brasileiras de cada número, podem acionar a IA. Outros remetentes e mídia ficam para atendimento humano. O fluxo completo foi confirmado com uma mensagem real do número terminado em **8747** para a linha conectada terminada em **0188**, geração Claude e aceite da resposta pela Evolution. Para repetir a conferência, envie um texto de um número autorizado e confira histórico e consumo no painel. Um envio aceito pelo provedor não comprova entrega ou leitura pelo destinatário.
 
-Google Calendar, integrações com CRM externo, automações de follow-up, documentos PDF/RAG vetorial, compartilhamento entre vendedores e gestão de clientes/cobrança são expansões separadas. A qualificação desta versão é manual; o agente coleta contexto, mas não calcula nem grava score automaticamente.
+Google Calendar, integrações com CRM externo, automações de follow-up, documentos PDF/RAG vetorial, compartilhamento entre vendedores e gestão de clientes/cobrança são expansões separadas. A qualificação é automática nas conversas atendidas pela IA (Web e WhatsApp). A migração `202610300003_crm_triage.sql` deve ser aplicada antes do deploy. A análise e a resposta são geradas na mesma chamada; só o texto de resposta entra na fila de envio. Notas e documentos não disparam mensagens externas.
 
 ## Rede do ambiente Codex
 
 Para instalação, os registries de pacotes são suficientes. Para publicar ou validar integrações, libere `api.vercel.com`, `vercel.com`, os domínios do deploy `*.vercel.app`, `api.anthropic.com` e o hostname exato do projeto Supabase. O rascunho de configuração da nuvem contém as adições conhecidas de Vercel/Anthropic. Salvar o rascunho não aplica a rede nem publica este projeto na Vercel.
+
+
+### Atualização CRM (ordem de publicação)
+
+1. `SUPABASE_PROJECT_REF=mdzflolthybnzewhpxno npm run crm:migrate` aplica somente a migração aditiva CRM e confere colunas, funções e RLS. O token de gerenciamento deve estar no vínculo seguro existente.
+2. Rode `npm run typecheck`, `npm test`, `npm run build` e `npm run test:e2e`.
+3. Faça push na `main`, conectada ao deploy automático, e confira o status Vercel do commit.
+4. Abra `https://ai.v4oliveira.com.br/#contacts`, entre na conta e escolha **Abrir ficha**. Uma próxima mensagem autorizada atendida pela IA deve atualizar resumo e critérios.
+
+Não publique o backend CRM antes de o comando de migração confirmar `crmReady: true`. A rotina não altera webhook, whitelist, Auth, variáveis Vercel ou conteúdo comercial existente.

@@ -1,4 +1,6 @@
-export type Contact = { id: string; name: string; email: string; phone: string; company: string; source: string; score: number; status: 'new' | 'qualifying' | 'qualified' | 'unqualified'; notes: string; created_at: string };
+export type Criterion = { score: number | null; evidence: string };
+export type Triage = { summary: string; next_action: string; criteria: Record<'budget' | 'need' | 'authority' | 'timing', Criterion>; score: number; status: 'qualifying' | 'qualified' | 'unqualified' };
+export type Contact = { id: string; name: string; email: string; phone: string; company: string; source: string; score: number; status: 'new' | 'qualifying' | 'qualified' | 'unqualified'; notes: string; created_at: string; job_title?: string; city?: string; owner_name?: string; tags?: string[]; files?: { id: string; name: string; url: string }[]; triage?: Triage | null; triage_updated_at?: string | null; triage_message_count?: number; crm_revision?: number };
 export type DealStage = 'new' | 'qualifying' | 'qualified' | 'meeting' | 'proposal' | 'won' | 'lost';
 export type Deal = { id: string; contact_id: string | null; title: string; value: number; stage: DealStage; created_at: string };
 export type Agent = { id: string; name: string; company: string; system_prompt: string; greeting: string; model: string; active: boolean; qualification_threshold: number; created_at: string };

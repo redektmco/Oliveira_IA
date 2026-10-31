@@ -5,7 +5,8 @@ Primeira versão funcional do fluxo comercial do protótipo Felipa: React, TypeS
 ## O que funciona
 
 - Login, criação de conta, confirmação de e-mail e recuperação de senha via Supabase.
-- Contatos com busca, notas, score/status de qualificação manual e exportação CSV.
+- CRM em **Contatos / CRM → Abrir ficha**: cadastro, notas, etiquetas, documentos por link, responsável, agenda e histórico.
+- Triagem automática no Web e WhatsApp: resumo factual, próxima ação, score e quatro critérios com evidências (orçamento, necessidade, autoridade e prazo). A ficha atualiza durante o atendimento por IA.
 - Oportunidades com etapas do pipeline e indicadores calculados dos dados salvos.
 - Reuniões com horário, duração, histórico e exportação de calendário ICS.
 - Agentes com identidade, instruções, modelo e pausa de atendimento.
@@ -17,7 +18,7 @@ Primeira versão funcional do fluxo comercial do protótipo Felipa: React, TypeS
 - Fila persistida com deduplicação, recuperação automática e indicação de falha ou envio não confirmado.
 - Demonstração independente de credenciais, com dados locais claramente identificados e nenhuma resposta de IA simulada.
 
-Cada conta tem um workspace privado. Equipe compartilhada, múltiplas organizações, assinaturas/cobrança, automações de follow-up, Google Calendar e sincronização com CRM externo não fazem parte desta primeira versão. No WhatsApp, a IA atende textos de números autorizados; demais números, áudios e anexos ficam para atendimento humano. A IA não pontua contatos ou agenda compromissos sozinha.
+Cada conta tem um workspace privado. Equipe compartilhada, múltiplas organizações, assinaturas/cobrança, automações de follow-up, Google Calendar e sincronização com CRM externo não fazem parte desta primeira versão. No WhatsApp, a IA atende textos de números autorizados; demais números, áudios e anexos ficam para atendimento humano. A IA pontua contatos automaticamente durante o atendimento; agendamentos continuam sob controle da equipe.
 
 ## Desenvolvimento
 
@@ -52,3 +53,9 @@ O domínio **https://ai.v4oliveira.com.br** está conectado ao projeto Supabase 
 Para entender o fluxo entre painel, Supabase, Claude e Evolution, veja [como o código funciona](docs/ARCHITECTURE.md).
 
 A pasta `.figma` e os plugins de ambiente Figma do ZIP original não são necessários no deploy Vercel. A identidade visual e os estilos do protótipo foram aproveitados; os dados demonstrativos e as conexões fictícias não são apresentados como produção.
+
+## Acessar o CRM
+
+Entre em https://ai.v4oliveira.com.br/#contacts. No menu, escolha **Contatos / CRM** e clique em **Abrir ficha** ou no nome do cliente. A ficha tem URL própria `#contacts/ID_DO_CONTATO`, preservada ao recarregar.
+
+Antes de publicar esta atualização, aplique `supabase/migrations/202610300003_crm_triage.sql` no projeto Felipa IA existente. A migração é aditiva, mantém RLS, fila e whitelist WhatsApp.

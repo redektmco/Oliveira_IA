@@ -25,6 +25,10 @@ test('PostgreSQL migration is repeatable; real SQL enforces RLS, owner links, qu
     const migration = await readFile(new URL('../supabase/migrations/202610200001_initial.sql', import.meta.url), 'utf8');
     await db.exec(migration);
     await db.exec(migration);
+    await db.exec(await readFile(new URL('../supabase/migrations/202610300002_whatsapp.sql', import.meta.url), 'utf8'));
+    const crmMigration = await readFile(new URL('../supabase/migrations/202610300003_crm_triage.sql', import.meta.url), 'utf8');
+    await db.exec(crmMigration);
+    await db.exec(crmMigration);
     const tables = await db.query<{ tablename: string; rowsecurity: boolean; forcerowsecurity: boolean }>(`
       select tablename, rowsecurity, c.relforcerowsecurity as forcerowsecurity
       from pg_tables t join pg_class c on c.relname = t.tablename
@@ -38,6 +42,7 @@ test('PostgreSQL migration is repeatable; real SQL enforces RLS, owner links, qu
     // DO-block assertions raise on failure. The SQL also verifies server-only RPC
     // grants, persisted attempt limits and rejections without half-written turns.
     await db.exec(securityChecks);
+    await db.exec(await readFile(new URL('../supabase/tests/triage.sql', import.meta.url), 'utf8'));
     const remaining = await db.query<{ count: number }>('select count(*)::integer as count from public.contacts');
     assert.equal(remaining.rows[0].count, 0, 'security checks must roll back their fixtures');
   } finally {

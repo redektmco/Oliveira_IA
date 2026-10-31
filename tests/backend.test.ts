@@ -34,6 +34,9 @@ function dependencies() {
       async completeUsage(...args) { call('complete', args); },
       async failUsage(...args) { call('fail', args); },
       async appendTurn(...args) { call('append', args); },
+      async contactMessages(...args) { call('contactMessages', args); return []; },
+      async contact(...args) { call('contact', args); return null; },
+      async appendTriagedTurn(...args) { call('triaged', args); },
     },
     claude: { async answer(input) { call('claude', [input]); return { text: 'Como posso ajudar?', usage: { input_tokens: 100, output_tokens: 20 } }; } },
   };
@@ -249,4 +252,23 @@ test('HTTP endpoints reject wrong methods, unauthenticated chat and bad content 
   healthHandler({ method: 'GET', headers: {} } as VercelRequest, mock.res);
   assert.equal(mock.result.status, 200);
   assert.equal((mock.result.body as { verified: boolean }).verified, false);
+});
+
+test('linked conversation automatically saves validated summary and score atomically, scoped to its owner', async () => {
+  const { deps, calls } = dependencies();
+  const contact = { id: '44444444-4444-4444-8444-444444444444', name: 'Cliente', email: '', phone: '', company: '', source: 'Web', score: 0, status: 'new' as const, notes: '', created_at: timestamp, crm_revision: 7 };
+  deps.repository.conversation = async () => ({ ...conversation, contact_id: contact.id });
+  deps.repository.contact = async (userId, id) => { assert.equal(userId, uid); assert.equal(id, contact.id); return contact; };
+  const response = { reply: 'Qual é o prazo?', triage: { summary: 'Cliente confirmou necessidade e orçamento.', next_action: 'Confirmar prazo de implantação.', disqualified: false, criteria: Object.fromEntries(['budget', 'need', 'authority', 'timing'].map(k => [k, {score: 75, evidence: 'Confirmado pelo cliente.'}])) } };
+  deps.claude.answer = async input => { assert.match(input.system, /SOMENTE JSON/); return { text: JSON.stringify(response), usage: {input_tokens: 100, output_tokens: 200} }; };
+  const result = await executeChat(parseChatInput({agentId, conversationId, message: 'Tenho orçamento.'}), 'jwt', deps);
+  assert.equal(result.text, response.reply);
+  assert.equal(result.triage?.score, 75);
+  assert.equal(result.triage?.status, 'qualified');
+  assert.deepEqual(calls.find(c => c.method === 'triaged')?.args, [uid, conversationId, contact, 'Tenho orçamento.', response.reply, result.triage]);
+  assert.equal(calls.some(c => c.method === 'append'), false);
+  response.triage.criteria.timing.score = 999;
+  await assert.rejects(executeChat(parseChatInput({agentId, conversationId, message: 'Atualização'}), 'jwt', deps), expectHttp(502));
+  assert.equal(calls.filter(c => c.method === 'triaged').length, 1, 'invalid model output must not write a turn or profile');
+  assert.equal(calls.filter(c => c.method === 'complete').length, 2, 'provider usage is recorded even for invalid structured output');
 });

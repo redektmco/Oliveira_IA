@@ -22,11 +22,11 @@ function downloadMeeting(meeting: Meeting) {
   const link = document.createElement('a'); link.href = url; link.download = 'reuniao.ics'; link.click(); URL.revokeObjectURL(url);
 }
 
-export default function Meetings() {
+export default function Meetings({ contactId, startOpen = false, onOpened }: { contactId?: string; startOpen?: boolean; onOpened?: () => void } = {}) {
   const { data, loading, create, update, remove } = useWorkspace();
   const [filter, setFilter] = useState('all');
   const [editing, setEditing] = useState<Meeting | null | undefined>();
-  const [form, setForm] = useState(blankMeeting);
+  const [form, setForm] = useState(() => ({ ...blankMeeting(), contact_id: contactId ?? null }));
   const [dateValue, setDateValue] = useState(() => localDateValue(tomorrow()));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -48,7 +48,7 @@ export default function Meetings() {
     return () => { document.removeEventListener('keydown', key); previous?.isConnected && previous.focus(); };
   }, [editing, busy]);
   const open = (meeting: Meeting | null) => {
-    setEditing(meeting); setForm(meeting ? { title: meeting.title, contact_id: meeting.contact_id, starts_at: meeting.starts_at, duration: meeting.duration, location: meeting.location, status: meeting.status } : blankMeeting());
+    setEditing(meeting); setForm(meeting ? { title: meeting.title, contact_id: meeting.contact_id, starts_at: meeting.starts_at, duration: meeting.duration, location: meeting.location, status: meeting.status } : { ...blankMeeting(), contact_id: contactId ?? null });
     setDateValue(localDateValue(meeting ? new Date(meeting.starts_at) : tomorrow())); setError(''); setSuccess('');
   };
   const save = async (event: FormEvent) => {
@@ -69,12 +69,13 @@ export default function Meetings() {
     setBusy(true); setError(''); setSuccess('');
     try { await remove('meetings', meeting.id); setSuccess('Reunião excluída da plataforma.'); } catch (cause) { setError(cause instanceof Error ? cause.message : 'Não foi possível excluir a reunião.'); } finally { setBusy(false); }
   };
+  useEffect(() => { if (startOpen) { open(null); onOpened?.(); } }, [startOpen]);
   const contacts = new Map(data.contacts.map(c => [c.id, c]));
-  const meetings = data.meetings.filter(m => filter === 'all' || m.status === filter).slice().sort((a,b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime());
-  const future = data.meetings.filter(m => m.status === 'scheduled' && new Date(m.starts_at).getTime() > Date.now());
+  const meetings = data.meetings.filter(m => !contactId || m.contact_id === contactId).filter(m => filter === 'all' || m.status === filter).slice().sort((a,b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime());
+  const future = data.meetings.filter(m => !contactId || m.contact_id === contactId).filter(m => m.status === 'scheduled' && new Date(m.starts_at).getTime() > Date.now());
   const browserTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   return <div className="content"><div className="page-header"><div><h1 className="page-title">Reuniões</h1><p className="page-description">Organize as conversas comerciais e registre os resultados.</p></div><div className="page-actions"><button className="btn btn-primary" onClick={() => open(null)}>+ Agendar reunião</button></div></div>
-    <div className="crm-summary"><div className="card"><span>Próximas reuniões</span><b>{future.length}</b><small>Agendadas para o futuro</small></div><div className="card"><span>Realizadas</span><b>{data.meetings.filter(m => m.status === 'completed').length}</b><small>Resultados registrados</small></div><div className="card"><span>Canceladas</span><b>{data.meetings.filter(m => m.status === 'cancelled').length}</b><small>Canceladas na plataforma</small></div><div className="card"><span>Total de reuniões</span><b>{data.meetings.length}</b><small>Todo o histórico</small></div></div>
+    <div className="crm-summary"><div className="card"><span>Próximas reuniões</span><b>{future.length}</b><small>Agendadas para o futuro</small></div><div className="card"><span>Realizadas</span><b>{data.meetings.filter(m => !contactId || m.contact_id === contactId).filter(m => m.status === 'completed').length}</b><small>Resultados registrados</small></div><div className="card"><span>Canceladas</span><b>{data.meetings.filter(m => !contactId || m.contact_id === contactId).filter(m => m.status === 'cancelled').length}</b><small>Canceladas na plataforma</small></div><div className="card"><span>Total de reuniões</span><b>{data.meetings.filter(m => !contactId || m.contact_id === contactId).length}</b><small>Todo o histórico</small></div></div>
     <div className="crm-info">Os horários da lista são exibidos em Brasília (America/Sao_Paulo). Exporte o arquivo .ics para adicionar à sua agenda. A plataforma não cria links de videoconferência nem envia convites automaticamente.</div>
     <div className="crm-toolbar"><select aria-label="Filtrar reuniões por status" value={filter} onChange={e => setFilter(e.target.value)}><option value="all">Todas as reuniões</option>{Object.entries(labels).map(([value,label]) => <option value={value} key={value}>{label}</option>)}</select><span className="crm-note">{meetings.length} reuniões</span></div>
     {error && editing === undefined && <div className="crm-error" role="alert">{error}</div>}{success && <div className="crm-success" role="status">{success}</div>}

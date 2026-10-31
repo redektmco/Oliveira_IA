@@ -2,6 +2,7 @@ import {createClient} from '@supabase/supabase-js';
 import {serverConfig,createRepository} from './supabase.js';
 import {createClaude} from './anthropic.js';
 import {buildMessages,buildSystemPrompt} from './chat.js';
+import {parseTriageAnswer,triagePrompt} from './triage.js';
 import {dailyLimit,resolveModel,HttpError} from './validation.js';
 import {DeliveryError,ensureWhatsAppConnected,sendWhatsAppText} from './whatsapp-provider.js';
 import type {IncomingWhatsApp} from './whatsapp-events.js';
@@ -26,17 +27,21 @@ export async function processWhatsAppJob(job:WhatsAppJob){
    if(current.error)throw new HttpError(503,'Fila indisponível.');
    const history=await db.from('messages').select('role,content,created_at,delivery_status').eq('user_id',job.user_id).eq('conversation_id',job.conversation_id).neq('id',job.incoming_id).order('created_at',{ascending:false}).limit(40);
    if(history.error)throw new HttpError(503,'Histórico indisponível.');
+   const contact=conversation.contact_id ? await repository.contact(job.user_id,conversation.contact_id) : null;
+   if(!contact)throw new HttpError(404,'Contato da conversa não encontrado.');
+   const contactHistory=await repository.contactMessages(job.user_id,contact.id);
    const model=resolveModel(agent.model,c.configuredModel);
    const usageId=await repository.reserveUsage(job.user_id,model,dailyLimit(c.dailyRequestLimit));
    let completed=false;
    try{
     const knowledge=await repository.knowledge(job.user_id);
-    const answer=await createClaude(c.anthropicKey).answer({model,system:buildSystemPrompt(agent,knowledge),messages:buildMessages(history.data.reverse().filter(m=>(m.role!=='user'||m.created_at<=current.data.created_at)&&!['canceled','failed','uncertain'].includes(m.delivery_status)).map(m=>({role:m.role==='user'?'user' as const:'assistant' as const,content:m.content})),job.body)});
+    const answer=await createClaude(c.anthropicKey).answer({model,structured:true,system:buildSystemPrompt(agent,knowledge)+'\n\n'+triagePrompt(contact,contactHistory),messages:buildMessages(history.data.reverse().filter(m=>(m.role!=='user'||m.created_at<=current.data.created_at)&&!['canceled','failed','uncertain'].includes(m.delivery_status)).map(m=>({role:m.role==='user'?'user' as const:'assistant' as const,content:m.content})),job.body)});
     if(!answer.text.trim())throw new HttpError(502,'Resposta vazia.');
     await repository.completeUsage(job.user_id,usageId,answer.usage);completed=true;
-    const saved=await bridgeRpc<boolean>('whatsapp_save_reply',{p_id:job.id,p_lease:job.lease_token,p_reply:answer.text});
+    const parsed=parseTriageAnswer(answer.text,agent.qualification_threshold);
+    const saved=await bridgeRpc<boolean>('whatsapp_save_triaged_reply',{p_id:job.id,p_lease:job.lease_token,p_contact_id:contact.id,p_expected_revision:contact.crm_revision ?? 0,p_reply:parsed.reply,p_triage:parsed.triage});
     if(!saved)return;
-    job.reply=answer.text;
+    job.reply=parsed.reply;
    }catch(e){if(!completed)await repository.failUsage(job.user_id,usageId).catch(()=>{});throw e;}
   }
   // Check connectivity before entering the non-repeatable external send phase.

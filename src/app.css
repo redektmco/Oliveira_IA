@@ -3,3 +3,28 @@
 @media(max-width:520px){.global-search{display:none}.demo-banner{align-items:flex-start}.demo-banner>span{max-width:65%}.setup-card{padding:16px}}
 .brand > .brand-mark{display:grid;place-items:center;color:#fff;font-size:12px;margin-top:0}
 .health-items{display:grid;gap:10px;margin:15px 0}
+
+/* Shared control rhythm across CRM, agents, inbox and settings. */
+.btn{height:auto;min-height:36px;padding:8px 14px;font-size:11px;line-height:1.35;flex-shrink:0}
+.page-actions,.crm-actions{flex-wrap:wrap;gap:8px}
+.page-actions{overflow:visible;max-width:100%}
+.crm-table .crm-actions{gap:8px}
+.crm-deal-card .crm-actions{gap:8px}
+.modal-head,.modal-footer{gap:12px}
+.modal-footer{flex-wrap:wrap;padding:16px 22px}
+.modal-body label{display:grid;gap:7px;margin-bottom:16px}
+.modal-body .form-grid{gap:16px}
+.modal-body .form-grid label{margin-bottom:0}
+.modal-body input,.modal-body select{min-height:40px;padding:9px 12px}
+.contact-name-link{display:inline-block;color:var(--text);font-weight:650;line-height:1.5;padding:6px 0;text-decoration:underline;text-decoration-color:#d4d4d8;text-underline-offset:3px}
+.contact-name-link:hover{color:var(--brand)}
+.contact-name-link:focus-visible,a:focus-visible{outline:2px solid var(--brand);outline-offset:4px;border-radius:3px}
+.user-profile>span{min-width:0}
+.breadcrumb b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.search-submit{min-width:28px;min-height:28px}
+.profile-details .crm-note{margin-top:12px}
+@media(max-width:850px){.page-actions{overflow:visible;gap:10px}.btn{min-height:40px}.breadcrumb{display:flex;flex:1;min-width:0}.breadcrumb>span{display:none}.breadcrumb>.icon{display:none}.mobile-menu,.mobile-close{min-width:40px;min-height:40px}.demo-banner button{min-height:36px}.profile-actions .btn{min-height:40px}.crm-toolbar select{min-height:40px}}
+@media(max-width:520px){.btn{min-height:44px;padding:10px 14px}.profile-actions .btn{min-height:44px}.auth-links button{padding:8px 0;min-height:40px}.nav-group button{height:40px}.profile-link{min-height:40px}.profile-tag-list button{min-width:30px;min-height:30px}.modal-footer .btn{flex:1}.profile-note-composer .btn{width:100%}.crm-table .btn{min-height:40px}.page-header .page-actions{width:100%}.demo-banner{align-items:center}.demo-banner button{line-height:1.5}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
+.breadcrumb{flex:1;min-width:0}.global-search{flex:0 1 270px;min-width:120px}.top-avatar{flex:none}
+@media(max-width:850px){.global-search{flex-basis:190px}}

@@ -1,5 +1,5 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
-import type { Agent, Conversation, Knowledge, Message } from '../src/lib/types.js';
+import type { Agent, Contact, Conversation, Knowledge, Message, Triage } from '../src/lib/types.js';
 import type { ChatRepository } from './chat.js';
 import { HttpError } from './validation.js';
 
@@ -43,6 +43,31 @@ export function databaseError(error: { code?: string } | null): never {
 
 export class SupabaseChatRepository implements ChatRepository {
   constructor(private readonly auth: SupabaseClient, private readonly admin: SupabaseClient) {}
+
+  async contactMessages(userId: string, contactId: string): Promise<Message[]> {
+    const { data, error } = await this.admin.from('messages').select('id, conversation_id, role, content, created_at, conversations!inner(contact_id, user_id)').eq('user_id', userId).eq('conversations.user_id', userId).eq('conversations.contact_id', contactId).not('delivery_status', 'in', '(failed,canceled,uncertain,queued,sending)').order('created_at', { ascending: false }).order('id', { ascending: false }).limit(80);
+    if (error) databaseError(error);
+    return ((data || []) as Message[]).reverse();
+  }
+
+  async contact(userId: string, id: string): Promise<Contact | null> {
+    const { data, error } = await this.admin.from('contacts').select('*').eq('user_id', userId).eq('id', id).maybeSingle();
+    if (error) databaseError(error);
+    return data as Contact | null;
+  }
+
+  async appendTriagedTurn(userId: string, conversationId: string, contact: Contact, user: string, assistant: string, triage: Triage): Promise<void> {
+    const { error } = await this.admin.rpc('append_triaged_turn', {
+      p_user_id: userId, p_conversation_id: conversationId, p_contact_id: contact.id,
+      p_expected_revision: contact.crm_revision ?? 0, p_user_content: user,
+      p_assistant_content: assistant, p_triage: triage,
+    });
+    if (error?.code === 'P0001') {
+      if (error.message === 'CRM_CHANGED') throw new HttpError(409, 'A ficha ou conversa mudou durante a análise. Atualize e tente novamente.');
+      if (error.message === 'CONVERSATION_NOT_AI') throw new HttpError(409, 'A IA foi pausada ou a conversa foi encerrada antes de salvar a resposta.');
+    }
+    if (error) databaseError(error);
+  }
 
   async authenticate(token: string) {
     let result;

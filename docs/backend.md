@@ -99,3 +99,12 @@ O webhook aceita conversas individuais e textos. Mídia segue para humano, sem b
 `tests/database.test.ts`, incluído em `npm test`, inicia PostgreSQL WASM (PGlite 0.5.10), aplica a migração duas vezes e executa `supabase/tests/security.sql`, com infraestrutura `auth` simulada. A migração e as assertivas passaram. Isso não substitui aplicar a migração e testar login/RLS no projeto Supabase de destino, nem valida concorrência entre conexões ou entrega a serviços externos.
 
 `tests/evolution.test.ts` valida o destino HTTPS, alias da chave, consulta somente de leitura, bloqueio de redirecionamentos, respostas filtradas, erros sem credenciais e autenticação antes do acesso ao provedor. Os testes usam respostas simuladas; o resultado real fica em `VALIDATION.md`.
+
+
+## Ficha CRM e triagem automática
+
+Web e WhatsApp usam saída JSON estruturada do Claude para resposta e triagem, validada antes de persistir. O servidor calcula a média dos quatro critérios; desconhecidos contribuem zero e impedem qualificação até que todos sejam conhecidos. A classificação respeita o limiar do agente. Contexto: resumo anterior, até 80 mensagens recentes do contato (18 mil caracteres) e conversa atual. Mensagens com envio pendente, falho, incerto ou cancelado não entram no contexto consolidado.
+
+`append_triaged_turn` salva o turno Web e a ficha atomicamente. `whatsapp_save_triaged_reply` preserva leases, deduplicação, whitelist, handoff e fila existentes; o resumo nunca é enviado ao cliente. Versão otimista `crm_revision` impede sobrescrita por análise antiga; mudanças de texto ou cadastro invalidam análises em andamento. A conta autenticada não pode forjar campos de proveniência da IA.
+
+O Playground sem conversa e a demonstração não atualizam a ficha por IA. Conversas em atendimento humano continuam sob controle da equipe. A ficha consulta atualizações a cada oito segundos enquanto visível. Documentos são links HTTPS cujo acesso é controlado pelo serviço de origem.

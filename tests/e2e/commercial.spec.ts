@@ -35,7 +35,7 @@ test('contato, oportunidade e mudança de etapa persistem no modo local', async 
   const errors: string[] = [];
   page.on('pageerror', error => errors.push(error.message));
   await enterDemo(page);
-  await navigate(page, 'Contatos');
+  await navigate(page, 'Contatos / CRM');
   await page.getByRole('button', {name:'+ Novo contato', exact:true}).click();
   const dialog = page.getByRole('dialog', {name:'Novo contato'});
   await dialog.getByLabel('Nome *', {exact:true}).fill('Lead de teste E2E');
@@ -49,7 +49,7 @@ test('contato, oportunidade e mudança de etapa persistem no modo local', async 
   await page.getByRole('dialog').getByLabel('Notas comerciais').fill('Necessidade confirmada durante teste.');
   await page.getByRole('dialog').getByRole('button', {name:'Salvar contato'}).click();
   await restoreDemo(page);
-  await navigate(page, 'Contatos');
+  await navigate(page, 'Contatos / CRM');
   await expect(page.getByText('Lead de teste E2E', {exact:true})).toBeVisible();
   await page.getByRole('button', {name:'Editar Lead de teste E2E', exact:true}).click();
   await expect(page.getByRole('dialog').getByLabel('Notas comerciais')).toHaveValue('Necessidade confirmada durante teste.');
@@ -127,7 +127,7 @@ test('menu móvel abre e navega sem overflow global', async ({page}, testInfo) =
   await page.setViewportSize({width:390,height:844});
   await enterDemo(page);
   await page.getByRole('button', {name:'Abrir menu',exact:true}).click();
-  await navigate(page, 'Contatos');
+  await navigate(page, 'Contatos / CRM');
   await expect(page.getByRole('heading', {name:'Contatos',exact:true})).toBeVisible();
   await expect(page.locator('.sidebar')).not.toHaveClass(/mobile-open/);
   await expect(page.getByRole('button', {name:'Fechar menu',exact:true})).not.toBeInViewport();

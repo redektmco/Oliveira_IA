@@ -23,7 +23,7 @@ test('WhatsApp SQL enforces whitelist, durable deduplication, handoff, leases, e
  const db=new PGlite();
  try{
   await db.exec(`create role anon nologin;create role authenticated nologin;create role service_role nologin bypassrls;create schema auth;create table auth.users(id uuid primary key,email text);create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claims',true)::jsonb->>'sub','')::uuid$$;create function auth.role() returns text language sql stable as $$select current_setting('request.jwt.claims',true)::jsonb->>'role'$$;grant usage on schema auth,public to authenticated,anon,service_role;`);
-  for(const name of ['202610200001_initial.sql','202610300002_whatsapp.sql']){const sql=await readFile(new URL('../supabase/migrations/'+name,import.meta.url),'utf8');await db.exec(sql);await db.exec(sql);}
+  for(const name of ['202610200001_initial.sql','202610300002_whatsapp.sql','202610300003_crm_triage.sql']){const sql=await readFile(new URL('../supabase/migrations/'+name,import.meta.url),'utf8');await db.exec(sql);await db.exec(sql);}
   const owner='11111111-1111-4111-8111-111111111111',other='22222222-2222-4222-8222-222222222222',agent='33333333-3333-4333-8333-333333333333';
   await db.exec(`insert into auth.users(id) values('${owner}'),('${other}');insert into public.agents(id,user_id,name) values('${agent}','${owner}','Felipa');insert into public.whatsapp_channels(instance,user_id,agent_id,enabled,activated_at,ai_allowlist) values('v4','${owner}','${agent}',true,now()-interval '1 hour',array['5511999999999']);set role service_role;set request.jwt.claims='{"role":"service_role"}';`);
   const ingest=async(id:string,text='Olá',fromMe=false,phone=jid)=>{const r=await db.query<{r:any}>('select public.whatsapp_ingest($1,$2,$3,$4,$5,$6) r',['v4',phone,id,text,'Cliente',fromMe]);return r.rows[0].r;};
@@ -34,7 +34,17 @@ test('WhatsApp SQL enforces whitelist, durable deduplication, handoff, leases, e
   const deniedConvo=await db.query<{status:string}>('select status from public.conversations where id=$1',[denied.conversationId]);assert.equal(deniedConvo.rows[0].status,'human');
   const claimed=await db.query<any>('select * from public.whatsapp_claim()');const job=claimed.rows[0];assert.equal(job.id,first.jobId);
   assert.equal((await db.query('select * from public.whatsapp_claim()')).rows.length,0);
-  await db.query('select public.whatsapp_save_reply($1,$2,$3)',[job.id,job.lease_token,'Resposta preparada']);
+  const profile=(await db.query<{id:string;crm_revision:number}>('select p.id,p.crm_revision from public.contacts p join public.conversations c on c.contact_id=p.id where c.id=$1',[first.conversationId])).rows[0];
+  const triage={summary:'Cliente iniciou contato pelo WhatsApp.',next_action:'Confirmar necessidade.',score:0,status:'qualifying',criteria:{budget:{score:null,evidence:'Não informado'},need:{score:null,evidence:'Não informado'},authority:{score:null,evidence:'Não informado'},timing:{score:null,evidence:'Não informado'}}};
+  await assert.rejects(db.query('select public.whatsapp_save_triaged_reply($1,$2,$3,$4,$5,$6)',[job.id,job.lease_token,profile.id,profile.crm_revision-1,'Resposta antiga',JSON.stringify(triage)]));
+  assert.equal((await db.query<{reply:string|null}>('select reply from public.whatsapp_jobs where id=$1',[job.id])).rows[0].reply,null);
+  const saved=await db.query<{ok:boolean}>('select public.whatsapp_save_triaged_reply($1,$2,$3,$4,$5,$6) ok',[job.id,job.lease_token,profile.id,profile.crm_revision,'Resposta preparada',JSON.stringify(triage)]);
+  assert.equal(saved.rows[0].ok,true);
+  const analyzed=(await db.query<{triage:any;triage_message_count:number}>('select triage,triage_message_count from public.contacts where id=$1',[profile.id])).rows[0];
+  assert.equal(analyzed.triage.summary,triage.summary);assert.equal(analyzed.triage_message_count,2);
+  assert.equal((await db.query<{reply:string}>('select reply from public.whatsapp_jobs where id=$1',[job.id])).rows[0].reply,'Resposta preparada');
+  assert.equal((await db.query<{ok:boolean}>('select public.whatsapp_save_triaged_reply($1,$2,$3,$4,$5,$6) ok',[job.id,job.lease_token,profile.id,profile.crm_revision,'Duplicada',JSON.stringify(triage)])).rows[0].ok,false);
+
   await db.query("update public.conversations set status='human' where id=$1",[first.conversationId]);
   assert.equal((await db.query<{ok:boolean}>('select public.whatsapp_prepare_send($1,$2) ok',[job.id,job.lease_token])).rows[0].ok,false);
   assert.equal((await db.query<{status:string}>('select status from public.whatsapp_jobs where id=$1',[job.id])).rows[0].status,'skipped');
