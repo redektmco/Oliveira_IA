@@ -34,7 +34,7 @@ function Split({ text, base = 0, step = 70 }: { text: string; base?: number; ste
 function FillText({ text }: { text: string }) {
   return <span data-fill>{text.split(' ').map((w, i) => <span className="fw" key={i}>{w} </span>)}</span>;
 }
-function Reveal({ children, delay = 0, className = '', as: Tag = 'div', ...rest }: { children: ReactNode; delay?: number; className?: string; as?: 'div' | 'li' | 'p' | 'h2' } & Record<string, unknown>) {
+function Reveal({ children, delay = 0, className = '', as: Tag = 'div', ...rest }: { children: ReactNode; delay?: number; className?: string; as?: 'div' | 'li' | 'p' | 'h2' | 'span' } & Record<string, unknown>) {
   return <Tag className={`rv ${className}`} data-reveal style={{ '--d': `${delay}ms` } as CSSProperties} {...rest}>{children}</Tag>;
 }
 function Cta({ children, className = '', label = 'Entrar' }: { children: ReactNode; className?: string; label?: string }) {
@@ -95,7 +95,7 @@ function ChatDemo() {
   }, [visible, step]); // eslint-disable-line react-hooks/exhaustive-deps
   const typing = step < msgs.length && step > 0 && msgs[step][0];
   return <div className="chat" ref={ref}>
-    {msgs.slice(0, step).map(([ia, text], i) => <div key={i} className={`bub ${ia ? 'ia' : 'lead'}`}>{text}</div>)}
+    {msgs.slice(0, step).map(([ia, text], i) => <div key={i} className={`bub ${ia ? 'ia' : 'usr'}`}>{text}</div>)}
     {typing && <div className="bub ia typing"><i /><i /><i /></div>}
   </div>;
 }
@@ -117,7 +117,7 @@ export default function Landing() {
     fx.current = startFx(rootRef.current);
     return () => fx.current?.destroy();
   }, []);
-  useEffect(() => { document.documentElement.style.overflow = ready ? '' : 'hidden'; return () => { document.documentElement.style.overflow = ''; }; }, [ready]);
+  useEffect(() => { fx.current?.lock(!ready); document.documentElement.style.overflow = ready ? '' : 'hidden'; return () => { document.documentElement.style.overflow = ''; }; }, [ready]);
   useEffect(() => { document.title = 'V4 Oliveira & Co · SDR com IA + CRM'; }, []);
 
   const go = (id: string) => (e: React.MouseEvent) => { e.preventDefault(); setMenu(false); fx.current?.scrollTo(id); };
@@ -168,7 +168,7 @@ export default function Landing() {
           <div className="shot" style={{ backgroundImage: 'url(/lp/product.jpg)' }} role="img" aria-label="Tela da plataforma SDR AI com agenda de reuniões" />
           <div className="chip c1" data-parallax="-0.06"><span className="ic green"><Icon name="user-check" size={18} /></span><div><b>Lead qualificado</b><small>Score 92 · pronto para reunião</small></div></div>
           <div className="chip c2" data-parallax="0.05"><span className="ic red"><Icon name="calendar-check" size={18} /></span><div><b>Reunião agendada</b><small>Hoje às 14:30 com Marina</small></div></div>
-          <div className="chip c3" data-parallax="-0.09"><span className="ic dark"><Icon name="zap" size={18} /></span><div><b>Resposta em 8s</b><small>Via WhatsApp, às 02:14 da manhã</small></div></div>
+          <div className="chip c3" data-parallax="-0.09"><span className="ic ink"><Icon name="zap" size={18} /></span><div><b>Resposta em 8s</b><small>Via WhatsApp, às 02:14 da manhã</small></div></div>
         </div>
       </div>
     </section>
@@ -199,11 +199,11 @@ export default function Landing() {
     </section>
 
     {/* SOLUÇÃO */}
-    <section className="sec dark solution" id="solucao">
+    <section className="sec dk solution" id="solucao">
       <div className="dglow" />
       <div className="head"><Reveal className="label">(02) A solução</Reveal>
         <div>
-          <h2 className="big white"><Reveal as="p" className="spl">Um SDR. Um CRM. Zero lead esquecido.</Reveal></h2>
+          <h2 className="big white"><Reveal as="span" className="spl">Um SDR. Um CRM. Zero lead esquecido.</Reveal></h2>
           <Reveal as="p" className="lead" delay={120}>Esqueça planilhas e ferramentas soltas. A SDR AI conversa, qualifica e agenda, e o CRM guarda tudo no lugar certo, sem ninguém digitar.</Reveal>
         </div>
       </div>
@@ -240,7 +240,7 @@ export default function Landing() {
     {/* COMO FUNCIONA — scroll horizontal fixado */}
     <section className="how" id="como-funciona" data-hscroll>
       <div className="how-pin">
-        <div className="head"><Reveal className="label">(03) Como funciona</Reveal><h2 className="big"><Reveal as="p" className="spl">No ar em 7 dias, sem dor de cabeça.</Reveal></h2></div>
+        <div className="head"><Reveal className="label">(03) Como funciona</Reveal><h2 className="big"><Reveal as="span" className="spl">No ar em 7 dias, sem dor de cabeça.</Reveal></h2></div>
         <div className="hbar"><i /></div>
         <div className="track" data-track>
           {steps.map((s, i) => <article key={s.n} className="step" data-spot style={{ '--i': i } as CSSProperties}>
@@ -265,7 +265,7 @@ export default function Landing() {
 
     {/* COMPARATIVO */}
     <section className="sec compare">
-      <div className="head"><Reveal className="label">(04) Comparativo</Reveal><h2 className="big"><Reveal as="p" className="spl">SDR humano ou SDR de IA?</Reveal></h2></div>
+      <div className="head"><Reveal className="label">(04) Comparativo</Reveal><h2 className="big"><Reveal as="span" className="spl">SDR humano ou SDR de IA?</Reveal></h2></div>
       <div className="table" role="table">
         <div className="tr th" role="row"><span /><span>SDR tradicional</span><span className="ai">SDR AI &amp; CRM</span></div>
         {compare.map(([c, a, b], i) => <Reveal key={c} delay={i * 70} className="tr" role="row"><span>{c}</span><span>{a}</span><span className="ai"><Icon name="check" size={16} /> {b}</span></Reveal>)}
@@ -292,11 +292,13 @@ export default function Landing() {
 
     {/* FAQ */}
     <section className="sec faq" id="faq">
-      <div className="head"><Reveal className="label">(06) FAQ</Reveal><h2 className="big"><Reveal as="p" className="spl">Perguntas frequentes</Reveal></h2></div>
+      <div className="head"><Reveal className="label">(06) FAQ</Reveal><h2 className="big"><Reveal as="span" className="spl">Perguntas frequentes</Reveal></h2></div>
       <div className="qs">
-        {faqs.map(([q, a], i) => <Reveal key={q} delay={i * 60} className={`q ${open === i ? 'open' : ''}`}>
-          <button aria-expanded={open === i} aria-controls={`faq-${i}`} onClick={() => setOpen(open === i ? -1 : i)}><span>{q}</span><i className="pm"><Icon name="plus" size={20} /></i></button>
-          <div className="ans" id={`faq-${i}`} role="region"><div><p>{a}</p></div></div>
+        {faqs.map(([q, a], i) => <Reveal key={q} delay={i * 60} className="qw">
+          <div className={`q ${open === i ? 'open' : ''}`}>
+            <button aria-expanded={open === i} aria-controls={`faq-${i}`} onClick={() => setOpen(open === i ? -1 : i)}><span>{q}</span><i className="pm"><Icon name="plus" size={20} /></i></button>
+            <div className="ans" id={`faq-${i}`} role="region"><div><p>{a}</p></div></div>
+          </div>
         </Reveal>)}
       </div>
     </section>
@@ -307,7 +309,7 @@ export default function Landing() {
       <h2 className="fh" data-reveal><span className="sw"><span className="swi">Seu próximo</span></span><span className="sw"><span className="swi">cliente já está</span></span><span className="sw"><span className="swi">chamando.</span></span></h2>
       <div className="frow">
         <Reveal as="p">Agende uma demonstração de 20 minutos e veja a SDR AI atendendo, qualificando e agendando em tempo real.</Reveal>
-        <a href={APP} className="btn dark big" data-magnetic="0.35" data-cursor-label="Entrar"><span className="btn-in"><span className="btn-t">Agendar demonstração</span><span className="btn-t btn-t2" aria-hidden="true">Agendar demonstração</span></span><Icon name="arrow" size={20} /></a>
+        <a href={APP} className="btn ink big" data-magnetic="0.35" data-cursor-label="Entrar"><span className="btn-in"><span className="btn-t">Agendar demonstração</span><span className="btn-t btn-t2" aria-hidden="true">Agendar demonstração</span></span><Icon name="arrow" size={20} /></a>
       </div>
     </section>
 

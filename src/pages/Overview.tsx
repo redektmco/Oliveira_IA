@@ -2,13 +2,12 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, typ
 import { Icon, type IconName } from '../components/ui';
 import { useWorkspace } from '../lib/workspace';
 import type { AssistantCard, AssistantMessage, AssistantThread } from '../lib/types';
+import { useTheme } from '../lib/theme';
 import './home.css';
 
-type Theme = 'dark' | 'light';
 type Reply = { threadId: string | null; title: string | null; persisted: boolean; text: string; actions: AssistantCard[] };
 
 const TZ = 'America/Sao_Paulo';
-const THEME_KEY = 'oliveira-home-theme';
 
 /** `send` runs the prompt right away; otherwise it fills the composer for the person to complete. */
 const suggestions: { label: string; icon: IconName; prompt: string; send?: boolean }[] = [
@@ -26,10 +25,6 @@ const kindIcon: Record<AssistantCard['kind'], IconName> = { read: 'search', crea
 function greeting() {
   const hour = Number(new Date().toLocaleString('en-US', { timeZone: TZ, hour: 'numeric', hour12: false })) % 24;
   return hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite';
-}
-
-function readTheme(): Theme {
-  try { return localStorage.getItem(THEME_KEY) === 'light' ? 'light' : 'dark'; } catch { return 'dark'; }
 }
 
 function when(iso: string) {
@@ -71,7 +66,7 @@ function Markdown({ text }: { text: string }) {
 export default function Overview({ go, userName }: { go?: (page: string) => void; userName?: string }) {
   const { data, demo, role, workspaceName, api, refresh } = useWorkspace();
   const navigate = (page: string) => go?.(page);
-  const [theme, setTheme] = useState<Theme>(readTheme);
+  const [theme] = useTheme();
   const [draft, setDraft] = useState('');
   const [turns, setTurns] = useState<AssistantMessage[]>([]);
   const [threadId, setThreadId] = useState<string | null>(null);
@@ -110,11 +105,6 @@ export default function Overview({ go, userName }: { go?: (page: string) => void
     return () => document.removeEventListener('keydown', close);
   }, [drawer]);
 
-  const toggleTheme = () => {
-    const next: Theme = theme === 'dark' ? 'light' : 'dark';
-    setTheme(next);
-    try { localStorage.setItem(THEME_KEY, next); } catch { /* The theme still changes for this visit. */ }
-  };
 
   const queue = useMemo(() => data.deal_tasks.filter(task => !task.done_at).length, [data.deal_tasks]);
   const eyebrow = `${new Date().toLocaleDateString('pt-BR', { timeZone: TZ, weekday: 'short', day: 'numeric', month: 'short' }).replace(/\./g, '').toUpperCase()} · ${queue === 0 ? 'NENHUMA TAREFA NA FILA' : `${queue} ${queue === 1 ? 'TAREFA NA FILA' : 'TAREFAS NA FILA'}`}`;
@@ -185,11 +175,6 @@ export default function Overview({ go, userName }: { go?: (page: string) => void
       </div>
       <div className="home-top-right">
         {!demo && role !== 'seller' && <button type="button" className="home-ghost" onClick={() => setDrawer(true)} aria-haspopup="dialog" aria-expanded={drawer}><Icon name="clock" size={14} />Histórico</button>}
-        <button type="button" className="home-icon-btn" onClick={toggleTheme} aria-label={theme === 'dark' ? 'Mudar para tema claro' : 'Mudar para tema escuro'} title={theme === 'dark' ? 'Tema claro' : 'Tema escuro'}>
-          {theme === 'dark'
-            ? <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" /></svg>
-            : <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" /></svg>}
-        </button>
       </div>
     </div>
 
