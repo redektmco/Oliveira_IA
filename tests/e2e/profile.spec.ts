@@ -5,9 +5,9 @@ test("ficha mantém notas, etiquetas, documentos e agenda vinculados ao cliente"
 }) => {
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
-  await page.goto("/");
+  await page.goto('/app');
   await page.getByRole("button", { name: "Explorar demonstração" }).click();
-  await page.goto("/#contacts");
+  await page.goto('/app#contacts');
   await page
     .getByRole("link", { name: "Contato de exemplo", exact: true })
     .click();
@@ -86,9 +86,9 @@ test("ficha adapta o design ao celular e oferece navegação por teclado nas aba
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("/");
+  await page.goto('/app');
   await page.getByRole("button", { name: "Explorar demonstração" }).click();
-  await page.goto("/#contacts/demo-contact");
+  await page.goto('/app#contacts/demo-contact');
   await expect(
     page.getByRole("heading", { name: "Contato de exemplo", exact: true }),
   ).toBeVisible();

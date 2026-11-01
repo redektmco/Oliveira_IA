@@ -27,3 +27,10 @@ O Supabase conectado é Felipa IA (`mdzflolthybnzewhpxno`). Seu Auth foi configu
 A cópia temporária `swift-orbit-3oo3d8l.tmp.now`, criada para um novo claim link, não recebeu o domínio principal. Reivindicar essa cópia não move o domínio nem as configurações privadas do projeto existente.
 
 Referências oficiais: https://vercel.com/docs/domains/working-with-domains/add-a-domain e https://vercel.com/kb/guide/a-record-and-caa-with-vercel.
+
+## Rotas
+
+- `https://ai.v4oliveira.com.br/` — landing page de vendas (`src/landing/`), com animações próprias e CTAs para `/app`.
+- `https://ai.v4oliveira.com.br/app` — aplicação (login, CRM, agentes). A navegação interna continua por hash, ex.: `/app#contacts`.
+- Logo: `public/brand/` (`logo-dark.svg`, `logo-light.svg`, `mark.svg`). Para usar o arquivo oficial, substitua esses arquivos mantendo os nomes.
+- No Supabase Auth, adicione `https://ai.v4oliveira.com.br/app` às Redirect URLs (os e-mails de confirmação, recuperação e convite agora retornam para `/app`).

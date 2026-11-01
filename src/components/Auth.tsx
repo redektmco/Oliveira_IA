@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase';
 import { takeAuthNotice } from '../lib/auth-notice';
 
 type Mode = 'login' | 'signup' | 'reset' | 'password';
-const redirect = () => window.location.origin + window.location.search;
+const redirect = () => window.location.origin + '/app' + window.location.search;
 
 /** Maps Supabase Auth errors to actionable messages without revealing whether an account exists. */
 export function authMessage(error: Pick<AuthError, 'code' | 'status' | 'message'> | null | undefined, mode: Mode): string {
@@ -103,7 +103,7 @@ export default function Auth({ onDemo, recovery = false }: { onDemo: () => void;
 
   const title = mode === 'signup' ? 'Crie sua conta' : mode === 'reset' ? 'Recupere seu acesso' : mode === 'password' ? 'Escolha uma nova senha' : 'Entre no seu workspace';
   const subtitle = mode === 'reset' ? 'Informe o e-mail da sua conta para receber um link de redefinição.' : mode === 'password' ? 'Defina a senha que você usará para entrar.' : 'Seus contatos, agentes e conversas em um só lugar.';
-  return <div className="auth-screen"><section className="auth-story"><div className="auth-brand"><span className="brand-mark">V4</span> Oliveira IA</div><span className="auth-eyebrow">SEU PRÓXIMO PASSO COMERCIAL</span><h1>Mais conversas.<br />Mais oportunidades.</h1><p>Uma operação comercial organizada, com agentes de IA e a sua equipe no controle.</p><div className="auth-features"><span>01 · Centralize contatos e oportunidades</span><span>02 · Configure agentes com seu conhecimento</span><span>03 · Teste e acompanhe cada conversa</span></div><small>SDR AI por Oliveira & Co.</small></section>
+  return <div className="auth-screen"><section className="auth-story"><div className="auth-brand"><img className="brand-logo" style={{height:40}} src="/brand/logo-light.svg" alt="V4 Oliveira & Co"/></div><span className="auth-eyebrow">SEU PRÓXIMO PASSO COMERCIAL</span><h1>Mais conversas.<br />Mais oportunidades.</h1><p>Uma operação comercial organizada, com agentes de IA e a sua equipe no controle.</p><div className="auth-features"><span>01 · Centralize contatos e oportunidades</span><span>02 · Configure agentes com seu conhecimento</span><span>03 · Teste e acompanhe cada conversa</span></div><small>SDR AI por Oliveira & Co.</small></section>
     <section className="auth-panel"><div className="auth-form"><span className="eyebrow">BEM-VINDO À SUA OPERAÇÃO</span><h2>{title}</h2><p>{subtitle}</p>
       {!supabase ? <div className="notice-box">A conexão com o Supabase ainda não foi configurada. Você pode explorar a demonstração local enquanto prepara a implantação.</div> : <form onSubmit={submit}>
         {mode !== 'password' && <label><span>E-mail</span><input type="email" autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} required maxLength={254} placeholder="voce@empresa.com.br" /></label>}

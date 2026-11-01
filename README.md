@@ -59,7 +59,7 @@ A pasta `.figma` e os plugins de ambiente Figma do ZIP original não são necess
 
 ## Acessar o CRM
 
-Entre em https://ai.v4oliveira.com.br/#contacts. No menu, escolha **Contatos / CRM** e clique em **Abrir ficha** ou no nome do cliente. A ficha tem URL própria `#contacts/ID_DO_CONTATO`, preservada ao recarregar.
+Entre em https://ai.v4oliveira.com.br/app#contacts. No menu, escolha **Contatos / CRM** e clique em **Abrir ficha** ou no nome do cliente. A ficha tem URL própria `#contacts/ID_DO_CONTATO`, preservada ao recarregar.
 
 Antes de publicar esta atualização, aplique `supabase/migrations/202610300003_crm_triage.sql` no projeto Felipa IA existente. A migração é aditiva, mantém RLS, fila e whitelist WhatsApp.
 

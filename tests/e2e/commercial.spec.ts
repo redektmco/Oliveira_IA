@@ -2,7 +2,7 @@ import { test, expect, type Page } from '@playwright/test';
 import {emptyState, type Agent} from '../../src/lib/types';
 
 async function enterDemo(page: Page) {
-  await page.goto('/');
+  await page.goto('/app');
   await page.getByRole('button', {name: 'Explorar demonstração'}).click();
   await expect(page.getByText('Demonstração', {exact: true}).first()).toBeVisible();
 }

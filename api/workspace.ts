@@ -51,7 +51,7 @@ export default async function handler(req:VercelRequest,res:VercelResponse){
   const token=randomToken(),expires=new Date(Date.now()+7*86400000).toISOString();
   const existing=await a.db.from('workspace_members').select('id,status').eq('owner_id',a.ownerId).eq('email',email).maybeSingle();if(existing.data?.status==='active')throw new HttpError(409,'Esta pessoa já faz parte da equipe.');
   const r=await a.db.from('workspace_members').upsert({owner_id:a.ownerId,email,name,role,status:'pending',token_hash:digest(token),expires_at:expires},{onConflict:'owner_id,email'}).select('id').single();if(r.error)throw new HttpError(503,'Não foi possível criar o convite.');
-  const url=`${appOrigin()}/?invite=${encodeURIComponent(token)}`;
+  const url=`${appOrigin()}/app?invite=${encodeURIComponent(token)}`;
   // Supabase delivers invitations for new users; registered users can use the explicit invitation link.
   const invited=await a.db.auth.admin.inviteUserByEmail(email,{redirectTo:url,data:{name}});
   await audit(a,`Convidou ${email} como ${role}`);return res.status(201).json({url,emailSent:!invited.error,expiresAt:expires});

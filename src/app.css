@@ -32,3 +32,4 @@
 
 .org-switcher select{background:#232326;border:0;color:#a1a1aa;font-size: var(--fs-sm);padding: 4px 0;max-width:155px;width:100%}.org-switcher img.org-avatar{object-fit:contain}
 .auth-password{position:relative;display:block}.auth-password input{width:100%;padding-right:76px}.auth-reveal{position:absolute;right:6px;top:50%;transform:translateY(-50%);height:28px;padding:0 8px;border:0;border-radius:var(--radius-sm);background:transparent;color:var(--muted);font-size:var(--fs-sm);font-weight:500}.auth-reveal:hover{background:#f4f4f5;color:var(--text)}
+.brand-logo{height:30px;width:auto;display:block}

@@ -35,7 +35,7 @@ export default async function handler(req:VercelRequest,res:VercelResponse){
    const profile=await providerFetch('https://openidconnect.googleapis.com/v1/userinfo',{headers:{Authorization:`Bearer ${tokens.access_token}`}});
    const saved=await db.from('calendar_accounts').upsert({owner_id:owner,member_id:actor,provider:'google',email:String(profile.email||'').slice(0,320),secret:seal({refresh_token:tokens.refresh_token}),connected_at:new Date().toISOString()},{onConflict:'owner_id,member_id'});if(saved.error)throw new HttpError(503,'Não foi possível salvar a agenda. Confira se a migração 202611010004 foi aplicada.');
    await db.from('workspace_audit').insert({user_id:owner,actor_id:actor,action:'Conectou o Google Calendar'});
-   res.statusCode=303;res.setHeader('Location',`${appOrigin()}/#meetings/calendar-connected`);return res.end();
+   res.statusCode=303;res.setHeader('Location',`${appOrigin()}/app#meetings/calendar-connected`);return res.end();
   }
   if(provider==='google'){
    const tokens=await providerFetch('https://oauth2.googleapis.com/token',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({client_id:process.env.GOOGLE_CLIENT_ID||'',client_secret:process.env.GOOGLE_CLIENT_SECRET||'',code:req.query.code,redirect_uri:callback,grant_type:'authorization_code'})});
@@ -53,6 +53,6 @@ export default async function handler(req:VercelRequest,res:VercelResponse){
    const saved=await db.from('integration_accounts').upsert({user_id:owner,provider,account_id:page.instagram_business_account.id,label:page.instagram_business_account.username||page.name,secret:seal({access_token:page.access_token}),metadata:{pageId:page.id,expiresAt:long.expires_in?new Date(Date.now()+long.expires_in*1000).toISOString():null},connected_at:new Date().toISOString()},{onConflict:'user_id,provider'});if(saved.error)throw new HttpError(503,'Não foi possível salvar a conexão Instagram.');
   }
   await db.from('workspace_audit').insert({user_id:owner,actor_id:actor,action:`Conectou ${provider==='google'?'Google Workspace':'Instagram'}`});
-  res.statusCode=303;res.setHeader('Location',`${appOrigin()}/#settings/${provider==='google'?'email':'instagram'}?connected=1`);return res.end();
+  res.statusCode=303;res.setHeader('Location',`${appOrigin()}/app#settings/${provider==='google'?'email':'instagram'}?connected=1`);return res.end();
  }catch(error){const safe=safeError(error);if(req.method==='GET'){res.setHeader('Content-Type','text/html; charset=utf-8');const escape=(s:string)=>s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]!));return res.status(safe.status).send(`<!doctype html><html lang="pt-BR"><meta name="viewport" content="width=device-width"><title>Conexão da conta</title><body style="font:16px system-ui;max-width:600px;margin:15vh auto;padding:24px"><h1>Não foi possível conectar</h1><p>${escape(safe.error)}</p><a href="${appOrigin()}/${calendar?'#meetings':`#settings/${provider==='google'?'email':'instagram'}`}">Voltar</a></body></html>`);}return res.status(safe.status).json({error:safe.error});}
 }

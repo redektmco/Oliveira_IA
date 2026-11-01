@@ -1,11 +1,12 @@
-import React from 'react'
+import React, { lazy, Suspense } from 'react'
 import ReactDOM from 'react-dom/client'
-import './index.css'
-import App from './App'
-import './styles/system.css'
+
+const App = lazy(() => import('./App'))
+const Landing = lazy(() => import('./landing/Landing'))
+const isApp = /^\/app(\/|$)/.test(window.location.pathname)
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <App />
+    <Suspense fallback={null}>{isApp ? <App /> : <Landing />}</Suspense>
   </React.StrictMode>,
 )

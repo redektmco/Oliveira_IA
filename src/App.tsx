@@ -15,6 +15,8 @@ import Knowledge from './pages/Knowledge';
 import Playground from './pages/Playground';
 import Inbox from './pages/Inbox';
 import Settings from './pages/Settings';
+import './index.css';
+import './styles/system.css';
 import './app.css';
 
 const groups: {label: string; items: {id: string; label: string; icon: IconName}[]}[] = [
@@ -67,7 +69,7 @@ function Shell({demo, user, onExit}: {demo: boolean; user: User | null; onExit: 
   return <div className="app-shell">
     <a href="#main-content" className="skip-link">Pular para o conteúdo</a>
     <aside ref={sidebar} inert={mobile && !open} className={`sidebar ${open ? 'mobile-open' : ''}`} aria-label="Navegação principal">
-      <div className="brand"><span className="brand-mark">V4</span><div><b>SDR AI</b><span>por Oliveira & Co.</span></div><button className="mobile-close icon-btn" aria-label="Fechar menu" onClick={() => setOpen(false)}>×</button></div>
+      <div className="brand"><img className="brand-logo" src="/brand/logo-light.svg" alt="V4 Oliveira & Co"/><button className="mobile-close icon-btn" aria-label="Fechar menu" onClick={() => setOpen(false)}>×</button></div>
       <div className="org-switcher">{logo?<img className="org-avatar" src={logo} alt=""/>:<span className="org-avatar">{workspaceName.split(" ").filter(Boolean).map(w=>w[0]).slice(0,2).join("")}</span>}<span><b>{workspaceName}</b>{workspaces.length>1?<select aria-label="Selecionar workspace" value={ownerId} onChange={e=>switchWorkspace(e.target.value)}>{workspaces.map(w=><option key={w.id} value={w.id}>{w.name}</option>)}</select>:<small>{demo ? 'Demonstração local' : 'Meu workspace'}</small>}</span><Icon name="building" size={15}/></div>
       <nav>{groups.map(group => <div className="nav-group" key={group.label}><div className="nav-label">{group.label}</div>{group.items.map(item => <button key={item.id} className={page === item.id ? 'active' : ''} aria-current={page === item.id ? 'page' : undefined} onClick={() => go(item.id)}><Icon name={item.icon}/><span>{item.label}</span></button>)}</div>)}</nav>
       <div className="sidebar-footer"><button className="help-card" onClick={() => go('settings')}><Icon name="spark"/><div><b>Sua operação começa aqui</b><span>Conexões e próximos passos</span></div><Icon name="chevron" size={14}/></button><button className="user-profile" onClick={onExit} title="Sair"><Avatar name={name}/><span><b>{name}</b><small>{demo ? 'Sair da demonstração' : 'Sair da conta'}</small></span><Icon name="arrow" size={16}/></button></div>
