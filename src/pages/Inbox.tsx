@@ -17,6 +17,9 @@ export default function Inbox() {
   const [newConversation, setNewConversation] = useState(false);
   const [contactId, setContactId] = useState('');
   const [agentId, setAgentId] = useState('');
+  const [channel, setChannel] = useState<'whatsapp' | 'web'>('whatsapp');
+  const [firstMessage, setFirstMessage] = useState('');
+  const startRequest = useRef<{key:string;id:string}|null>(null);
   const bottom = useRef<HTMLDivElement>(null);
   const pendingSend = useRef<{text:string;conversationId:string;id:string}|null>(null);
   useEffect(() => {if (demo) return; const timer=window.setInterval(() => {if (!document.hidden) void refresh(true).catch(()=>{});},5000);return () => window.clearInterval(timer);},[demo,refresh]);
@@ -26,7 +29,8 @@ export default function Inbox() {
   const agent = data.agents.find((item) => item.id === conversation?.agent_id);
   const messages = data.messages.filter((item) => item.conversation_id === selectedId).sort((a, b) => a.created_at.localeCompare(b.created_at));
   const activeAgents = data.agents.filter((item) => item.active);
-  const canCreate = data.contacts.length > 0 && activeAgents.length > 0;
+  const canCreate = data.contacts.length > 0;
+  const chosenContact = data.contacts.find((item) => item.id === contactId);
   const filtered = [...data.conversations].sort((a, b) => b.created_at.localeCompare(a.created_at)).filter((item) => {
     const person = data.contacts.find((candidate) => candidate.id === item.contact_id);
     return `${person?.name ?? 'Contato removido'} ${person?.company ?? ''}`.toLocaleLowerCase('pt-BR').includes(search.toLocaleLowerCase('pt-BR'));
@@ -52,13 +56,28 @@ export default function Inbox() {
 
   async function start(event: FormEvent) {
     event.preventDefault();
-    if (!contactId || !agentId || busy) return;
+    if (!contactId || busy) return;
     setBusy(true);
     setError('');
     try {
-      const result = await create('conversations', { contact_id: contactId, agent_id: agentId, channel: 'web', status: 'ai' });
-      setSelectedId(result.id);
+      if (channel === 'whatsapp') {
+        const text = firstMessage.trim();
+        if (!text) throw new Error('Escreva a mensagem que será enviada ao contato.');
+        if (demo) throw new Error('Na demonstração não há WhatsApp conectado. Entre com sua conta para enviar ao contato.');
+        // Reuse the request id when retrying the same message, so a timeout never sends it twice.
+        const key = `${contactId}:${text}`;
+        if (startRequest.current?.key !== key) startRequest.current = { key, id: crypto.randomUUID() };
+        const result = await api<{conversationId: string}>('whatsapp.start', { contactId, requestId: startRequest.current.id, text });
+        startRequest.current = null;
+        await refresh().catch(() => {});
+        setSelectedId(result.conversationId);
+      } else {
+        if (!agentId) throw new Error('Escolha um agente ativo para o teste interno.');
+        const result = await create('conversations', { contact_id: contactId, agent_id: agentId, channel: 'web', status: 'ai' });
+        setSelectedId(result.id);
+      }
       setDraft('');
+      setFirstMessage('');
       setNewConversation(false);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Não foi possível criar a conversa.');
@@ -115,7 +134,7 @@ export default function Inbox() {
 
   return <div className={`ai-inbox ${selectedId ? 'ai-inbox-selected' : ''}`}>
     <aside className="ai-conversations" aria-label="Lista de conversas">
-      <div className="ai-conversation-heading"><h1>Caixa de entrada</h1><button className="btn btn-primary" onClick={() => { setError(''); setContactId(data.contacts[0]?.id ?? ''); setAgentId(activeAgents[0]?.id ?? ''); setNewConversation(true); }} disabled={busy || !canCreate} aria-label="Nova conversa">+ Nova</button></div>
+      <div className="ai-conversation-heading"><h1>Caixa de entrada</h1><button className="btn btn-primary" onClick={() => { setError(''); setContactId(data.contacts[0]?.id ?? ''); setAgentId(activeAgents[0]?.id ?? ''); setChannel(demo ? 'web' : 'whatsapp'); setFirstMessage(''); setNewConversation(true); }} disabled={busy || !canCreate} aria-label="Nova conversa">+ Nova</button></div>
       <div className="ai-conversation-search"><label className="ai-field"><span className="ai-sr-only">Buscar conversas</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar contato ou empresa…" /></label></div>
       <p className="ai-conversation-note">Todos os canais · {data.conversations.length} conversas</p>
       <div className="ai-conversation-list">
@@ -124,7 +143,7 @@ export default function Inbox() {
           const recent = data.messages.filter((entry) => entry.conversation_id === item.id).sort((a, b) => b.created_at.localeCompare(a.created_at))[0];
           return <button key={item.id} className={`ai-conversation-item ${selectedId === item.id ? 'selected' : ''}`} onClick={() => select(item.id)} disabled={busy} aria-pressed={selectedId === item.id}><span className="avatar">{person?.name.split(' ').filter(Boolean).map((part) => part[0]).slice(0, 2).join('') || '?'}</span><span className="ai-conversation-copy"><b>{person?.name ?? 'Contato removido'}</b><small>{person?.company || 'Sem empresa'}</small><span>{recent?.content ?? 'Nenhuma mensagem ainda'}</span><span className={`badge badge-${item.status === 'ai' ? 'success' : item.status === 'human' ? 'warning' : 'neutral'}`}>{statusText[item.status]}</span></span></button>;
         })}
-        {filtered.length === 0 && <div className="ai-empty"><h2>{search ? 'Nenhuma conversa encontrada' : 'Sua caixa está vazia'}</h2><p>{canCreate ? 'Crie uma conversa para testar o atendimento com um contato.' : 'Cadastre um contato e ative um agente nas respectivas áreas para começar.'}</p></div>}
+        {filtered.length === 0 && <div className="ai-empty"><h2>{search ? 'Nenhuma conversa encontrada' : 'Sua caixa está vazia'}</h2><p>{canCreate ? 'Inicie uma conversa pelo WhatsApp ou teste o agente com um contato.' : 'Cadastre um contato para começar.'}</p></div>}
       </div>
     </aside>
     <section className="ai-inbox-chat" aria-label="Histórico da conversa">
@@ -146,6 +165,17 @@ export default function Inbox() {
         </form>
       </>}
     </section>
-    {newConversation && <div className="modal-overlay"><form className="modal ai-modal" role="dialog" aria-modal="true" aria-labelledby="new-conversation-title" onSubmit={start}><div className="modal-head"><div><h2 className="page-title" id="new-conversation-title">Nova conversa interna</h2><span>Escolha o contato e o agente para testar o atendimento.</span></div><button className="btn" type="button" onClick={() => setNewConversation(false)} disabled={busy} aria-label="Fechar nova conversa">×</button></div><div className="modal-body"><label className="ai-field"><span>Contato</span><select autoFocus required value={contactId} onChange={(event) => setContactId(event.target.value)} disabled={busy}>{data.contacts.map((item) => <option key={item.id} value={item.id}>{item.name}{item.company ? ` · ${item.company}` : ''}</option>)}</select></label><label className="ai-field"><span>Agente ativo</span><select required value={agentId} onChange={(event) => setAgentId(event.target.value)} disabled={busy}>{activeAgents.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>{error && <div className="ai-alert" role="alert">{error}</div>}<p className="ai-muted">A conversa fica salva neste workspace e não envia mensagens ao WhatsApp.</p></div><div className="modal-footer"><button className="btn" type="button" onClick={() => setNewConversation(false)} disabled={busy}>Cancelar</button><button className="btn btn-primary" disabled={busy || !contactId || !agentId}>{busy ? 'Criando…' : 'Criar conversa'}</button></div></form></div>}
+    {newConversation && <div className="modal-overlay"><form className="modal ai-modal" role="dialog" aria-modal="true" aria-labelledby="new-conversation-title" onSubmit={start}><div className="modal-head"><div><h2 className="page-title" id="new-conversation-title">Nova conversa</h2><span>Envie uma mensagem ao contato ou teste o agente internamente.</span></div><button className="btn btn-ghost btn-icon" type="button" onClick={() => setNewConversation(false)} disabled={busy} aria-label="Fechar nova conversa">×</button></div><div className="modal-body">
+      <label className="ai-field"><span>Contato</span><select autoFocus required value={contactId} onChange={(event) => setContactId(event.target.value)} disabled={busy}>{data.contacts.map((item) => <option key={item.id} value={item.id}>{item.name}{item.company ? ` · ${item.company}` : ''}</option>)}</select></label>
+      <fieldset className="ai-channel-choice" disabled={busy}><legend>Canal</legend>
+        <label className={channel === 'whatsapp' ? 'selected' : ''}><input type="radio" name="channel" value="whatsapp" checked={channel === 'whatsapp'} onChange={() => setChannel('whatsapp')} /><span><b>WhatsApp</b><small>Envia a mensagem para o telefone do contato. A conversa fica em atendimento humano.</small></span></label>
+        <label className={channel === 'web' ? 'selected' : ''}><input type="radio" name="channel" value="web" checked={channel === 'web'} onChange={() => setChannel('web')} /><span><b>Teste interno com IA</b><small>Simula o lead dentro do painel. Nada é enviado ao contato.</small></span></label>
+      </fieldset>
+      {channel === 'whatsapp' ? <>
+        <p className="ai-muted">Telefone: {chosenContact?.phone ? chosenContact.phone : <b className="ai-warning-text">contato sem telefone — edite a ficha antes de enviar</b>}</p>
+        <label className="ai-field"><span>Mensagem</span><textarea required rows={4} maxLength={4000} value={firstMessage} onChange={(event) => setFirstMessage(event.target.value)} placeholder="Olá! Aqui é da Oliveira & Co. …" disabled={busy} /></label>
+      </> : <label className="ai-field"><span>Agente ativo</span><select required value={agentId} onChange={(event) => setAgentId(event.target.value)} disabled={busy || !activeAgents.length}>{activeAgents.length ? activeAgents.map((item) => <option key={item.id} value={item.id}>{item.name}</option>) : <option value="">Nenhum agente ativo</option>}</select></label>}
+      {error && <div className="ai-alert" role="alert">{error}</div>}
+    </div><div className="modal-footer"><button className="btn" type="button" onClick={() => setNewConversation(false)} disabled={busy}>Cancelar</button><button className="btn btn-primary" disabled={busy || !contactId || (channel === 'whatsapp' ? !firstMessage.trim() || !chosenContact?.phone : !agentId)}>{busy ? 'Enviando…' : channel === 'whatsapp' ? 'Enviar pelo WhatsApp' : 'Criar conversa de teste'}</button></div></form></div>}
   </div>;
 }

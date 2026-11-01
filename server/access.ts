@@ -48,7 +48,7 @@ export async function access(req:VercelRequest,options:{mfaSetup?:boolean}={}):P
  if((settings.security.requireMfa||user.factors?.some(f=>f.status==='verified'))&&claims.aal!=='aal2'&&!options.mfaSetup)throw new HttpError(403,'Confirme seu código de autenticação em duas etapas para acessar o workspace.');
  if(!settings.security.allowGoogle&&claims.amr?.some((entry:any)=>entry.method==='oauth'))throw new HttpError(403,'O login Google está desabilitado neste workspace.');
  const ip=clientIp(req);if(!ipAllowed(ip,settings.security.allowedIps))throw new HttpError(403,'Este endereço IP não está autorizado a acessar o workspace.');
- const sessionId=typeof claims.session_id==='string'?claims.session_id:'';uuid(sessionId);
+ const sessionId=typeof claims.session_id==='string'?claims.session_id:'';if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(sessionId))throw new HttpError(401,'Sessão inválida. Entre novamente.');
  const existing=await db.from('workspace_sessions').select('revoked_at,last_seen_at').eq('id',sessionId).eq('user_id',user.id).maybeSingle();if(existing.error)throw new HttpError(503,'Não foi possível verificar a sessão.');
  const lastSeen=existing.data?Date.parse(existing.data.last_seen_at):Number(claims.iat)*1000;
  if(existing.data?.revoked_at||!Number.isFinite(lastSeen)||Date.now()-lastSeen>settings.security.sessionDays*86400000)throw new HttpError(401,'Esta sessão foi encerrada ou expirou por inatividade. Entre novamente.');

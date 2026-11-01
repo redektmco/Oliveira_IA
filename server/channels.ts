@@ -39,3 +39,19 @@ export async function sendChannelMessage(a:Access,b:Record<string,any>){
  const updated=await a.db.from('messages').update({delivery_status:'sent',...(providerId?{provider_message_id:providerId}:{})}).eq('id',saved.data.id).eq('user_id',a.ownerId);if(updated.error)throw new Error();return {sent:true};
  }catch(e){await a.db.from('messages').update({delivery_status:e instanceof HttpError&&e.status<500?'failed':'uncertain'}).eq('id',saved.data.id).eq('user_id',a.ownerId);throw e;}
 }
+/** Brazilian numbers without country code get 55; the result must be a valid WhatsApp JID. */
+export function whatsappJid(phone:string){
+ let digits=String(phone||'').replace(/\D/g,'');if(digits.startsWith('00'))digits=digits.slice(2);
+ if(digits.length===10||digits.length===11)digits=`55${digits}`;
+ if(!/^[1-9]\d{7,14}$/.test(digits))throw new HttpError(400,'O contato precisa de um telefone válido com DDD (e DDI, se não for do Brasil).');
+ return `${digits}@s.whatsapp.net`;
+}
+const startErrors:Record<string,[number,string]>={WHATSAPP_NOT_CONNECTED:[409,'O WhatsApp deste workspace não está conectado. Verifique em Configurações → WhatsApp.'],PHONE_OF_OTHER_CONTACT:[409,'Este telefone já pertence a outro contato com conversa no WhatsApp. Abra a conversa existente na Caixa de entrada.'],INVALID_PHONE:[400,'Telefone inválido para WhatsApp.'],CONTACT_NOT_FOUND:[404,'Contato não encontrado.']};
+/** Starts (or continues) a WhatsApp conversation with a contact and queues the first human message. */
+export async function startWhatsApp(a:Access,b:Record<string,any>){
+ uuid(b.requestId);const message=text(b.text,4000,true),contact=await contactAccess(a,b.contactId),jid=whatsappJid(contact.phone);
+ const instance=process.env.WHATSAPP_EVO_INSTANCE?.trim();if(!instance||!(process.env.WHATSAPP_EVO_TOKEN||process.env.WHATSAPP_TOKEN_EVO))throw new HttpError(503,'O WhatsApp ainda não foi configurado no servidor.');
+ const r=await a.db.rpc('whatsapp_start_human',{p_user:a.ownerId,p_instance:instance,p_contact:contact.id,p_jid:jid,p_request:b.requestId,p_text:message});
+ if(r.error){const known=startErrors[r.error.message];if(known)throw new HttpError(known[0],known[1]);if(['42883','PGRST202'].includes(String(r.error.code)))throw new HttpError(503,'Aplique a migração 202611020005 no Supabase para iniciar conversas pelo WhatsApp.');throw new HttpError(503,'Não foi possível enfileirar a mensagem do WhatsApp.');}
+ waitUntil(backgroundWorker());return {queued:true,...(r.data as {conversationId:string;jobId:string})};
+}

@@ -24,7 +24,7 @@ O requisito seguro `SUPABASE_ACCESS_TOKEN`, com destino `api.supabase.com`, est�
 ## 1. Preparar o Supabase
 
 1. Abra o SQL Editor do projeto Supabase correto.
-2. Execute os arquivos de `supabase/migrations/` em ordem: `202610200001_initial.sql` , `202610300002_whatsapp.sql` e `202610300003_crm_triage.sql`. Eles criam tabelas, índices, RLS, funções de quota/gravação e a fila WhatsApp. As migrações podem ser reaplicadas neste esquema. Para verificar as regras em um banco descartável, veja `supabase/tests/security.sql` e as instruções em `supabase/README.md`; o teste usa transação e rollback.
+2. Execute os arquivos de `supabase/migrations/` em ordem: `202610200001_initial.sql`, `202610300002_whatsapp.sql`, `202610300003_crm_triage.sql`, `202610310003_workspace.sql`, `202611010004_sales_automation.sql` e `202611020005_opportunities.sql`. Eles criam tabelas, índices, RLS, funções de quota/gravação e a fila WhatsApp. As migrações podem ser reaplicadas neste esquema. Para verificar as regras em um banco descartável, veja `supabase/tests/security.sql` e as instruções em `supabase/README.md`; o teste usa transação e rollback.
 3. Em Authentication, habilite e-mail/senha e configure confirmação de e-mail. Crie sua conta e confirme o endereço.
 4. Para piloto privado, desabilite novas inscrições públicas após criar/convidar as contas autorizadas. O limite de IA é por usuário; abrir cadastros para qualquer pessoa exige controle adicional de convites, abuso e orçamento global.
 5. Defina **Site URL** para o domínio final da Vercel e adicione esse domínio nas **Redirect URLs** do Auth. Para desenvolvimento, adicione também o endereço local da aplicação na porta 5173. Adicione domínios de preview somente quando necessário.

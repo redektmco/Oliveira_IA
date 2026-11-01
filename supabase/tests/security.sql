@@ -178,7 +178,7 @@ insert into public.deals (contact_id, title) values ('10000000-0000-4000-8000-00
 insert into public.meetings (contact_id, title, starts_at) values ('10000000-0000-4000-8000-000000000003', 'Cleanup meeting', now());
 insert into public.conversations (id, contact_id, agent_id) values
   ('30000000-0000-4000-8000-000000000003', '10000000-0000-4000-8000-000000000003', '20000000-0000-4000-8000-000000000001');
-insert into public.messages (conversation_id, role, content) values ('30000000-0000-4000-8000-000000000003', 'user', 'Cleanup message');
+insert into public.messages (conversation_id, role, content) values ('30000000-0000-4000-8000-000000000003', 'human', 'Cleanup message');
 reset role;
 delete from auth.users where id = '00000000-0000-4000-8000-000000000001';
 do $test$

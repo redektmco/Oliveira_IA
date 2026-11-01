@@ -9,6 +9,7 @@ import {
   type Conversation,
 } from "../lib/types";
 import Meetings from "./Meetings";
+import { DealDialog, money } from "./opportunities/shared";
 import "./profile.css";
 import {formatPhone} from "../lib/phone";
 import {Dialog,Field,usePanelData} from "../settings/shared";
@@ -58,6 +59,7 @@ export default function ContactProfile({
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [schedule, setSchedule] = useState(false);
+  const [newDeal, setNewDeal] = useState(false);
   const [selectedConversation, setSelectedConversation] = useState("");
   const conversations = data.conversations
     .filter((c) => c.contact_id === contact.id)
@@ -810,6 +812,13 @@ export default function ContactProfile({
               </p>
             )}
           </section>
+          <section className="card profile-deals-card">
+            <div className="profile-section-head">
+              <h2>OPORTUNIDADES</h2>
+              <button className="profile-link" onClick={() => setNewDeal(true)}>+ Nova</button>
+            </div>
+            {deals.length ? <ul className="profile-deal-list">{deals.map(deal => <li key={deal.id}><a href={`#pipeline/${encodeURIComponent(deal.id)}`}><b>{deal.title}</b><small>{money(deal.value)} · {stages[deal.stage]}</small></a></li>)}</ul> : <p className="profile-muted">Nenhuma oportunidade vinculada.</p>}
+          </section>
           <section className="card profile-contact-card">
             <div className="profile-section-head">
               <h2>DADOS DE CONTATO</h2>
@@ -927,6 +936,7 @@ export default function ContactProfile({
         </aside>
       </div>
       {editingAction&&<Dialog title="Editar próxima ação" onClose={()=>setEditingAction(false)} busy={busy} submitLabel="Salvar sugestão" onSubmit={e=>{e.preventDefault();void run(async()=>{await update("contacts",contact.id,{ai_next_action:nextActionDraft});setEditingAction(false);},"Sugestão atualizada.");}}><Field label="Próxima ação sugerida"><textarea rows={5} maxLength={4000} value={nextActionDraft} onChange={e=>setNextActionDraft(e.target.value)}/></Field></Dialog>}
+      {newDeal && <DealDialog deal={null} contactId={contact.id} onClose={() => setNewDeal(false)} onSaved={() => setSuccess('Oportunidade criada.')} />}
     </div>
   );
 }

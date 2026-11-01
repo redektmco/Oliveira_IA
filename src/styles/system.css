@@ -1,0 +1,169 @@
+/*
+ * Design system — loaded after every page stylesheet.
+ * One compact scale (Twenty-like density) for type, spacing, controls and containers.
+ * Page stylesheets keep layout specifics; metrics shared between screens live here.
+ *
+ * Type:     11 caption · 12 secondary · 13 body/controls · 15 section · 18 page · 24 KPI
+ * Spacing:  4px grid (4 · 8 · 12 · 16 · 20 · 24 · 32)
+ * Controls: 32px (28px small) · radius 6px · cards radius 8px
+ */
+
+/* ---------- Shell ---------- */
+.brand { height: 48px; padding: 0 var(--sp-4); }
+.brand b { font-size: var(--fs-md); }
+.brand span { font-size: var(--fs-xs); }
+.org-switcher { margin: var(--sp-3); padding: var(--sp-2); gap: var(--sp-2); border-radius: var(--radius-lg); }
+.org-switcher b, .user-profile b { font-size: var(--fs-sm); }
+.org-switcher small, .user-profile small { font-size: var(--fs-xs); }
+.nav-group { margin-top: var(--sp-4); }
+.nav-label { font-size: var(--fs-xs); font-weight: 600; letter-spacing: .06em; padding: 0 var(--sp-2) var(--sp-1); }
+.nav-group button { height: var(--control-h); gap: var(--sp-2); padding: 0 var(--sp-2); font-size: var(--fs-md); border-radius: var(--radius-md); }
+.help-card b { font-size: var(--fs-sm); }
+.help-card span { font-size: var(--fs-xs); }
+.topbar { height: 48px; padding: 0 var(--page-pad-x); gap: var(--sp-3); }
+.breadcrumb { font-size: var(--fs-md); gap: var(--sp-2); }
+.global-search { height: var(--control-h); border-radius: var(--radius-md); font-size: var(--fs-md); }
+.top-avatar { width: 28px; height: 28px; font-size: var(--fs-xs); }
+.demo-banner, .error-banner { font-size: var(--fs-sm); padding: var(--sp-2) var(--page-pad-x); }
+
+/* ---------- Page container ---------- */
+main > .content, main > div > .content, .content {
+  padding: var(--page-pad-y) var(--page-pad-x) var(--sp-8);
+  max-width: var(--page-max);
+  margin: 0 auto;
+}
+.page-header { min-height: 0; margin-bottom: var(--sp-4); align-items: center; gap: var(--sp-4); }
+.page-title, .page-header h1 { font-size: var(--fs-xl); font-weight: 600; letter-spacing: -.01em; line-height: 1.3; margin: 0; }
+.page-description { font-size: var(--fs-sm); margin: var(--sp-1) 0 0; color: var(--muted); line-height: 1.45; }
+.page-actions { gap: var(--sp-2); flex-wrap: wrap; }
+
+/* ---------- Buttons: every variant shares metrics ---------- */
+.btn, .v2-primary, .v2-secondary, .v2-btn, .auth-submit, .settings-save {
+  height: var(--control-h);
+  min-height: var(--control-h);
+  padding: 0 var(--sp-3);
+  gap: 6px;
+  font-size: var(--fs-md);
+  font-weight: 500;
+  border-radius: var(--radius-md);
+  line-height: 1;
+}
+.btn .icon, .v2-primary .icon, .v2-secondary .icon, .v2-btn .icon { width: 16px; height: 16px; }
+.btn-sm, .crm-actions .btn, .profile-file .btn { height: var(--control-h-sm); min-height: var(--control-h-sm); padding: 0 var(--sp-2); font-size: var(--fs-sm); }
+.v2-icon-btn, .btn-icon { width: var(--control-h); padding: 0; justify-content: center; }
+.text-link { font-size: inherit; font-weight: 500; }
+.icon-btn { width: var(--control-h); height: var(--control-h); border-radius: var(--radius-md); }
+
+/* ---------- Form controls ---------- */
+.modal input:not([type=checkbox]):not([type=radio]):not([type=color]):not([type=file]),
+.modal select,
+.crm-modal input:not([type=checkbox]):not([type=radio]),
+.crm-modal select,
+.ai-field input:not([type=checkbox]):not([type=radio]),
+.ai-field select,
+.settings-field input:not([type=checkbox]):not([type=radio]):not([type=color]),
+.settings-field select,
+.form-control {
+  height: var(--control-h);
+  min-height: var(--control-h);
+  padding: 0 10px;
+  font-size: var(--fs-md);
+  border-radius: var(--radius-md);
+}
+.modal textarea, .crm-modal textarea, .ai-field textarea, .settings-field textarea, textarea.form-control {
+  padding: var(--sp-2) 10px;
+  font-size: var(--fs-md);
+  border-radius: var(--radius-md);
+  line-height: 1.5;
+}
+.modal label > span, .crm-modal label > span, .ai-field > span, .settings-field > span, .field-label {
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  color: #3f3f46;
+}
+.crm-form-help, .settings-field small, .ai-field small { font-size: var(--fs-xs); }
+
+/* ---------- Cards and sections ---------- */
+.card, .v2-card, .settings-card { border-radius: var(--radius-lg); }
+.crm-section-head h2, .profile-section-head h2, .settings-card-head h3, .card-title, .section-heading h2, .table-section-head h2 {
+  font-size: var(--fs-lg);
+  font-weight: 600;
+  letter-spacing: -.005em;
+  margin: 0;
+}
+.metric-card { padding: var(--sp-4); }
+.metric-label, .crm-summary span, .v2-stats span { font-size: var(--fs-sm); color: var(--muted); }
+.metric-value, .crm-summary b, .v2-stats b, .agent-stats b, .meeting-stats b { font-size: var(--fs-2xl); font-weight: 600; letter-spacing: -.02em; line-height: 1.2; }
+.crm-summary small, .v2-stats small, .metric-card .crm-note { font-size: var(--fs-xs); color: var(--muted); }
+.metric-grid, .crm-summary, .v2-stats { gap: var(--sp-3); }
+
+/* ---------- Badges, chips, pills ---------- */
+.badge, .v2-pill, .v2-chip, .v2-status {
+  height: 20px;
+  padding: 0 6px;
+  font-size: var(--fs-xs);
+  font-weight: 500;
+  border-radius: var(--radius-sm);
+  gap: 4px;
+}
+
+/* ---------- Tabs and segmented controls ---------- */
+.v2-tab, .profile-tabs button, .view-tabs button, .inbox-tabs button, .drawer-tabs button, .settings-tabs button, .segmented button, .v2-segments button {
+  font-size: var(--fs-md);
+}
+
+/* ---------- Tables ---------- */
+.v2-table th, .crm-table th, .settings-table-wrap th, .ds-table th {
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: var(--sp-2) var(--sp-3);
+}
+.v2-table td, .crm-table td, .settings-table-wrap td, .ds-table td { font-size: var(--fs-md); padding: var(--sp-2) var(--sp-3); }
+
+/* ---------- Dialogs ---------- */
+.modal-head, .settings-dialog > header { padding: var(--sp-4) var(--sp-5); }
+.modal-head h2, .modal-head .page-title, .settings-dialog h2 { font-size: var(--fs-lg); font-weight: 600; }
+.modal-head span { font-size: var(--fs-sm); }
+.modal-body { padding: var(--sp-5); gap: var(--sp-3); }
+.modal-footer { padding: var(--sp-3) var(--sp-5); gap: var(--sp-2); }
+
+/* ---------- Feedback ---------- */
+.crm-error, .crm-success, .crm-info, .notice-box, .form-error { font-size: var(--fs-sm); border-radius: var(--radius-md); }
+.empty-state h1 { font-size: var(--fs-xl); }
+
+/* ---------- Record pages (contact, opportunity) ---------- */
+.profile-title h1, .record-title h1 { font-size: var(--fs-xl); font-weight: 600; letter-spacing: -.01em; }
+.profile-title .badge { min-height: 20px; height: 20px; padding: 0 6px; font-size: var(--fs-xs); border-radius: var(--radius-sm); }
+.profile-details h2, .record-side h2, .ds-label {
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.profile-summary h2 { font-size: var(--fs-lg); font-weight: 600; }
+.profile-summary > p { font-size: var(--fs-md); line-height: 1.6; }
+.profile-back, .record-back { font-size: var(--fs-sm); }
+
+/* ---------- Auth ---------- */
+.auth-form input { height: var(--control-h); font-size: var(--fs-md); }
+.auth-form h2 { font-size: var(--fs-2xl); font-weight: 600; letter-spacing: -.02em; }
+.auth-form > p { font-size: var(--fs-md); margin-bottom: var(--sp-5); }
+.auth-submit { width: 100%; margin-top: var(--sp-2); }
+
+/* ---------- Overrides of older page-specific scales (keep every screen on the same header/KPI metrics) ---------- */
+.v2-page .page-header, .content .page-header { margin-bottom: var(--sp-4); }
+.v2-page .page-title, .content .page-title, .ai-conversation-heading h1 { font-size: var(--fs-xl); font-weight: 600; letter-spacing: -.01em; }
+.v2-page .page-description, .content .page-description { font-size: var(--fs-sm); margin-top: var(--sp-1); }
+.metric-card, .v2-stats > div, .opp-kpis .card, .crm-summary .card, .agent-stats .card, .meeting-stats .card { padding: var(--sp-4); }
+.metric-value, .v2-stats b, .opp-kpis b, .crm-summary b, .agent-stats b, .meeting-stats b { font-size: var(--fs-2xl); font-weight: 600; letter-spacing: -.02em; line-height: 1.2; margin: var(--sp-2) 0 var(--sp-1); }
+.metric-label, .v2-stats span, .opp-kpis span, .crm-summary span, .agent-stats span, .meeting-stats span { font-size: var(--fs-sm); color: var(--muted); }
+.v2-stats small, .opp-kpis small, .crm-summary small, .agent-stats small, .meeting-stats small, .metric-card .crm-note { font-size: var(--fs-xs); color: var(--muted); margin: 0; }
+.crm-empty p, .ai-empty p { margin: var(--sp-1) 0 var(--sp-3); }
+.crm-empty b, .ai-empty h2 { font-size: var(--fs-lg); font-weight: 600; }
+.settings-nav a { height: var(--control-h); padding: 0 var(--sp-2); font-size: var(--fs-md); margin: 0; }
+.settings-nav h2 { font-size: var(--fs-xs); letter-spacing: .06em; font-weight: 600; margin: 0 var(--sp-2) var(--sp-1); }
+.settings-nav { gap: var(--sp-4); }

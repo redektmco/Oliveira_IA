@@ -1,5 +1,6 @@
 import {createContext,useCallback,useContext,useEffect,useRef,useState,type ReactNode} from 'react';
 import {supabase} from './supabase';
+import {setAuthNotice} from './auth-notice';
 import {deleteDemoRow,loadDemo,saveDemo} from './demo';
 import {emptyState,type DatabaseState,type EditableTable,type RowInput,type Tables} from './types';
 import {defaultSettings,mergeSettings,type WorkspaceSettings,type WorkspaceRole} from './settings-types';
@@ -12,7 +13,18 @@ interface Workspace{
  create:<K extends EditableTable>(table:K,input:RowInput<K>)=>Promise<Tables[K]>;
  update:<K extends EditableTable>(table:K,id:string,patch:Partial<RowInput<K>>)=>Promise<void>;remove:(table:EditableTable,id:string)=>Promise<void>;askClaude:(request:ChatRequest)=>Promise<ChatResult>;
 }
+export class ApiError extends Error{constructor(message:string,public readonly status:number){super(message);this.name='ApiError';}}
 const Context=createContext<Workspace|null>(null);
+/** Mirrors the database deal triggers so the local demonstration shows a real timeline. */
+function demoDealEvents(data:DatabaseState,before:Tables['deals']|undefined,patch:Partial<Tables['deals']>,now:string):DatabaseState{
+ if(!before)return data;const events:Tables['deal_events'][]=[];const add=(kind:Tables['deal_events']['kind'],detail:Record<string,unknown>)=>events.push({id:crypto.randomUUID(),deal_id:before.id,kind,detail,actor_id:'demo',created_at:now});
+ if(patch.stage!==undefined&&patch.stage!==before.stage)add('stage',{from:before.stage,to:patch.stage,reason:patch.stage==='lost'?patch.lost_reason??before.lost_reason??'':''});
+ if(patch.value!==undefined&&patch.value!==before.value)add('value',{from:before.value,to:patch.value});
+ if(patch.assigned_to!==undefined&&patch.assigned_to!==before.assigned_to)add('owner',{from:before.assigned_to??null,to:patch.assigned_to});
+ if(patch.close_date!==undefined&&patch.close_date!==before.close_date)add('close_date',{from:before.close_date??null,to:patch.close_date});
+ const deals=data.deals.map(d=>d.id!==before.id?d:{...d,updated_at:now,...(patch.stage!==undefined&&patch.stage!==before.stage?{stage_changed_at:now,closed_at:['won','lost'].includes(patch.stage)?now:null}:{})});
+ return {...data,deals,deal_events:[...data.deal_events,...events]};
+}
 export function useWorkspace(){const value=useContext(Context);if(!value)throw new Error('Workspace indisponível.');return value;}
 export function WorkspaceProvider({demo,userId,children}:{demo:boolean;userId:string|null;children:ReactNode}){
  const [data,setData]=useState<DatabaseState>(()=>demo?loadDemo():emptyState()),dataRef=useRef(data);
@@ -36,7 +48,12 @@ export function WorkspaceProvider({demo,userId,children}:{demo:boolean;userId:st
   }
   const session=await supabase?.auth.getSession(),token=session?.data.session?.access_token;if(!token)throw new Error('Sua sessão expirou. Entre novamente.');
   const response=await fetch('/api/workspace',{method:'POST',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json','X-Workspace-Id':ownerRef.current},body:JSON.stringify({action,...input}),signal:AbortSignal.timeout(55000)});
-  const result=await response.json().catch(()=>({}));if(!response.ok)throw new Error(result.error||'Não foi possível concluir a operação.');if(action==='settings.save'&&input.section==='general'){const general=input.value as WorkspaceSettings['general'];setWorkspaceName(general.name);setLogo(general.logo);setPhoneFormat(general.phoneFormat);}return result as T;
+  const result=await response.json().catch(()=>({}));
+  if(response.status===401&&supabase){
+   // The server ended this session (inactivity, revocation or expiry): return to the login screen with the reason.
+   setAuthNotice(result.error||'Sua sessão expirou. Entre novamente.');await supabase.auth.signOut({scope:'local'}).catch(()=>{});
+  }
+  if(!response.ok)throw new ApiError(result.error||'Não foi possível concluir a operação.',response.status);if(action==='settings.save'&&input.section==='general'){const general=input.value as WorkspaceSettings['general'];setWorkspaceName(general.name);setLogo(general.logo);setPhoneFormat(general.phoneFormat);}return result as T;
  },[demo]);
  const refresh=useCallback(async(silent=false)=>{
   if(demo)return;const current=++generation.current;if(!silent)setLoading(true);
@@ -46,7 +63,12 @@ export function WorkspaceProvider({demo,userId,children}:{demo:boolean;userId:st
   if(demo){try{const s=mergeSettings(JSON.parse(localStorage.getItem('oliveira-settings-demo-v1')||'null'));setWorkspaceName(s.general.name);setLogo(s.general.logo);setPhoneFormat(s.general.phoneFormat);}catch{}return;}
   setLoading(true);
   try{
-   const info=await api('bootstrap');setRole(info.role);setWorkspaceName(info.workspaceName);setLogo(info.logo);setPhoneFormat(info.phoneFormat);setWorkspaces(info.workspaces);
+   let info;
+   try{info=await api('bootstrap');}catch(e){
+    // A removed or disabled membership leaves a stale workspace id in this tab: fall back to the user's own workspace.
+    if(e instanceof ApiError&&e.status===403&&userId&&ownerRef.current!==userId){try{sessionStorage.removeItem(`oliveira-workspace-${userId}`);}catch{}ownerRef.current=userId;setOwnerId(userId);window.dispatchEvent(new Event('oliveira-workspace-changed'));return;}
+    throw e;
+   }setRole(info.role);setWorkspaceName(info.workspaceName);setLogo(info.logo);setPhoneFormat(info.phoneFormat);setWorkspaces(info.workspaces);
    const invitation=new URLSearchParams(location.search).get('invite');
    if(invitation){const accepted=await api('team.accept',{token:invitation});history.replaceState(null,'',location.pathname+location.hash);ownerRef.current=accepted.ownerId;setOwnerId(accepted.ownerId);try{sessionStorage.setItem(`oliveira-workspace-${userId}`,accepted.ownerId);}catch{}return;}
    await refresh();
@@ -55,11 +77,11 @@ export function WorkspaceProvider({demo,userId,children}:{demo:boolean;userId:st
  useEffect(()=>{ownerRef.current=ownerId;void load();return()=>{generation.current++;};},[ownerId,load]);
  const switchWorkspace=(id:string)=>{if(!workspaces.some(w=>w.id===id))return;generation.current++;replace(emptyState());setError(null);ownerRef.current=id;setOwnerId(id);try{sessionStorage.setItem(`oliveira-workspace-${userId}`,id);}catch{}window.dispatchEvent(new Event('oliveira-workspace-changed'));};
  const create=async<K extends EditableTable>(table:K,input:RowInput<K>):Promise<Tables[K]>=>{
-  if(demo){const row={...input,id:crypto.randomUUID(),created_at:new Date().toISOString()}as Tables[K];commitDemo({...dataRef.current,[table]:[...dataRef.current[table],row]});return row;}
+  if(demo){const now=new Date().toISOString(),row={...(table==='deals'?{assigned_to:userId||'demo',updated_at:now,stage_changed_at:now,closed_at:null}:{}),...(table==='deal_notes'?{author:'Visitante'}:{}),...input,id:crypto.randomUUID(),created_at:now}as Tables[K];const next={...dataRef.current,[table]:[...dataRef.current[table],row]};if(table==='deals'){const deal=row as Tables['deals'];next.deal_events=[...next.deal_events,{id:crypto.randomUUID(),deal_id:deal.id,kind:'created',detail:{stage:deal.stage,value:deal.value},actor_id:'demo',created_at:now}];}commitDemo(next);return row;}
   const {row}=await api('create',{table,input});replace({...dataRef.current,[table]:[...dataRef.current[table],row]});await refresh().catch(()=>{});return row;
  };
  const update=async<K extends EditableTable>(table:K,id:string,patch:Partial<RowInput<K>>)=>{
-  if(demo){commitDemo({...dataRef.current,[table]:dataRef.current[table].map(row=>row.id===id?{...row,...patch}:row)});return;}
+  if(demo){const now=new Date().toISOString();let next={...dataRef.current,[table]:dataRef.current[table].map(row=>row.id===id?{...row,...patch}:row)};if(table==='deals')next=demoDealEvents(next,dataRef.current.deals.find(d=>d.id===id),patch as Partial<Tables['deals']>,now);commitDemo(next);return;}
   const {row}=await api('update',{table,id,input:patch});replace({...dataRef.current,[table]:dataRef.current[table].map(current=>current.id===id?row:current)});await refresh().catch(()=>{});
  };
  const remove=async(table:EditableTable,id:string)=>{if(demo){commitDemo(deleteDemoRow(dataRef.current,table,id));return;}await api('delete',{table,id});replace(deleteDemoRow(dataRef.current,table,id));await refresh().catch(()=>{});};

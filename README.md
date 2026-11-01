@@ -7,7 +7,8 @@ Primeira versão funcional do fluxo comercial do protótipo Felipa: React, TypeS
 - Login, criação de conta, confirmação de e-mail e recuperação de senha via Supabase.
 - CRM em **Contatos / CRM → Abrir ficha**: cadastro, notas, etiquetas, documentos por link, responsável, agenda e histórico.
 - Triagem automática no Web e WhatsApp: resumo factual, próxima ação, score e quatro critérios com evidências (orçamento, necessidade, autoridade e prazo). A ficha atualiza durante o atendimento por IA.
-- Oportunidades com etapas do pipeline e indicadores calculados dos dados salvos.
+- Oportunidades em kanban (arrastar e soltar) ou tabela, com filtros, previsão ponderada e exportação CSV. Cada oportunidade tem ficha própria (`#pipeline/ID`): barra de etapas, ganho/perda com motivo, responsável, previsão de fechamento, probabilidade, tarefas, notas, linha do tempo automática e reuniões/conversas do contato.
+- Caixa de entrada → **Nova conversa** envia a primeira mensagem pelo WhatsApp para o telefone do contato, ou cria um teste interno com a IA.
 - Reuniões com horário, duração, histórico e exportação de calendário ICS.
 - Pipeline automático: cada lead que chega por um canal vira oportunidade em **Novo lead** e avança conforme a triagem da IA.
 - A IA oferece horários livres do SDR e marca a reunião quando o cliente confirma, com sincronização no Google Calendar do SDR e link do Meet. Veja [Agenda e pipeline](docs/WORKSPACE.md#agenda-e-pipeline-automáticos).
@@ -65,3 +66,7 @@ Antes de publicar esta atualização, aplique `supabase/migrations/202610300003_
 ## Configurações e canais — implementação de 31/10/2026
 
 A implementação das dez telas adiciona equipe compartilhada com funções, configurações persistidas, diagnóstico/reconexão WhatsApp, OAuth Google/Instagram, widget, API/webhooks, integração Stripe, MFA, sessões e privacidade. A ficha e a triagem automática existentes foram preservadas. Consulte [a preparação, capacidades e dependências](docs/WORKSPACE.md) antes da publicação. As novas integrações só ficam ativas após configurar os serviços e autorizar as contas; os testes locais não comprovam operação em produção.
+
+## Oportunidades, login e design — implementação de 02/11/2026
+
+Ficha de oportunidade, revisão de login/segurança e padronização visual. Veja [o que falta para o MVP](docs/MVP.md). A migração `supabase/migrations/202611020005_opportunities.sql` (e a `202611010004_sales_automation.sql`, que estava pendente) foram aplicadas no projeto Felipa IA em 02/11/2026; confira com `SUPABASE_PROJECT_REF=mdzflolthybnzewhpxno npm run opportunities:check`. Os tamanhos de fonte, espaçamentos e controles vêm dos tokens em `src/index.css` e de `src/styles/system.css`; use-os em telas novas em vez de valores fixos.

@@ -19,7 +19,9 @@
     "deploy:preview": "vercel",
     "deploy:production": "vercel --prod",
     "crm:check": "node --use-env-proxy --import tsx scripts/migrate-crm.ts --check",
-    "crm:migrate": "node --use-env-proxy --import tsx scripts/migrate-crm.ts --apply"
+    "crm:migrate": "node --use-env-proxy --import tsx scripts/migrate-crm.ts --apply",
+    "opportunities:check": "node --use-env-proxy --import tsx scripts/migrate-opportunities.ts --check",
+    "opportunities:migrate": "node --use-env-proxy --import tsx scripts/migrate-opportunities.ts --apply"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.78.0",

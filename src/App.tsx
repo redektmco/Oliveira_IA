@@ -18,7 +18,7 @@ import Settings from './pages/Settings';
 import './app.css';
 
 const groups: {label: string; items: {id: string; label: string; icon: IconName}[]}[] = [
-  {label: 'OPERAÇÃO COMERCIAL', items: [{id:'overview',label:'Visão geral',icon:'grid'},{id:'inbox',label:'Caixa de entrada',icon:'message'},{id:'contacts',label:'Contatos / CRM',icon:'users'},{id:'pipeline',label:'Pipeline de vendas',icon:'pipeline'},{id:'meetings',label:'Reuniões',icon:'calendar'}]},
+  {label: 'OPERAÇÃO COMERCIAL', items: [{id:'overview',label:'Visão geral',icon:'grid'},{id:'inbox',label:'Caixa de entrada',icon:'message'},{id:'contacts',label:'Contatos / CRM',icon:'users'},{id:'pipeline',label:'Oportunidades',icon:'pipeline'},{id:'meetings',label:'Reuniões',icon:'calendar'}]},
   {label: 'INTELIGÊNCIA ARTIFICIAL', items: [{id:'agents',label:'Agentes de IA',icon:'spark'},{id:'knowledge',label:'Base de conhecimento',icon:'book'},{id:'playground',label:'Playground',icon:'play'}]},
   {label: 'GESTÃO', items: [{id:'integrations',label:'Integrações',icon:'plug'},{id:'usage',label:'Uso da IA',icon:'chart'},{id:'settings',label:'Configurações',icon:'settings'}]},
 ];
@@ -61,6 +61,7 @@ function Shell({demo, user, onExit}: {demo: boolean; user: User | null; onExit: 
   useEffect(() => { const listener = () => { setPage(hashPage()); setContactId(window.location.hash.split('/')[1] || ''); }; window.addEventListener('hashchange',listener); return () => window.removeEventListener('hashchange',listener); }, []);
   const go = (next: string) => {window.location.hash = next; setPage(next);setOpen(false);};
   const profileContact = page === 'contacts' ? data.contacts.find(c => encodeURIComponent(c.id) === contactId) : undefined;
+  const profileDeal = page === 'pipeline' ? data.deals.find(d => encodeURIComponent(d.id) === contactId) : undefined;
   const label = pages.find(p => p.id === page)?.label || 'Visão geral';
   const name = user?.email || 'Visitante';
   return <div className="app-shell">
@@ -71,7 +72,7 @@ function Shell({demo, user, onExit}: {demo: boolean; user: User | null; onExit: 
       <nav>{groups.map(group => <div className="nav-group" key={group.label}><div className="nav-label">{group.label}</div>{group.items.map(item => <button key={item.id} className={page === item.id ? 'active' : ''} aria-current={page === item.id ? 'page' : undefined} onClick={() => go(item.id)}><Icon name={item.icon}/><span>{item.label}</span></button>)}</div>)}</nav>
       <div className="sidebar-footer"><button className="help-card" onClick={() => go('settings')}><Icon name="spark"/><div><b>Sua operação começa aqui</b><span>Conexões e próximos passos</span></div><Icon name="chevron" size={14}/></button><button className="user-profile" onClick={onExit} title="Sair"><Avatar name={name}/><span><b>{name}</b><small>{demo ? 'Sair da demonstração' : 'Sair da conta'}</small></span><Icon name="arrow" size={16}/></button></div>
     </aside>
-    <div className="main-shell"><header className="topbar"><button ref={menuButton} className="mobile-menu" aria-label="Abrir menu" aria-expanded={open} onClick={() => setOpen(true)}>☰</button><div className="breadcrumb"><span>{profileContact ? "Contatos" : workspaceName}</span><Icon name="chevron" size={13}/><b>{profileContact?.name || label}</b></div><form className="global-search" onSubmit={e => {e.preventDefault(); go('contacts');}}><Icon name="search" size={16}/><input aria-label="Buscar contatos" placeholder="Buscar contatos…" value={query} onChange={e => setQuery(e.target.value)}/><button aria-label="Pesquisar" className="search-submit">↵</button></form><Notifications/><button className="top-avatar" title={name} aria-label="Ir para configurações" onClick={() => go('settings')}>OC</button></header>
+    <div className="main-shell"><header className="topbar"><button ref={menuButton} className="mobile-menu" aria-label="Abrir menu" aria-expanded={open} onClick={() => setOpen(true)}>☰</button><div className="breadcrumb">{profileContact || profileDeal ? <a href={profileContact ? '#contacts' : '#pipeline'}>{profileContact ? 'Contatos' : 'Oportunidades'}</a> : <span>{workspaceName}</span>}<Icon name="chevron" size={13}/><b>{profileContact?.name || profileDeal?.title || label}</b></div><form className="global-search" onSubmit={e => {e.preventDefault(); go('contacts');}}><Icon name="search" size={16}/><input aria-label="Buscar contatos" placeholder="Buscar contatos…" value={query} onChange={e => setQuery(e.target.value)}/><button aria-label="Pesquisar" className="search-submit">↵</button></form><Notifications/><button className="top-avatar" title={name} aria-label="Ir para configurações" onClick={() => go('settings')}>{name.split(/[@.\s_-]+/).filter(Boolean).map(part => part[0]).slice(0,2).join('').toUpperCase() || 'V'}</button></header>
       {demo && <div className="demo-banner"><span><b>Demonstração</b> · Dados locais de exemplo. A IA e os canais externos não estão conectados.</span><button onClick={onExit}>Conectar minha conta →</button></div>}
       <main id="main-content" tabIndex={-1}>{error && <div className="error-banner" role="alert"><span>{error} {retryError}</span><Button disabled={loading} onClick={() => {setRetryError(''); refresh().catch(() => setRetryError('A conexão continua indisponível.'));}}>Tentar novamente</Button></div>}
         {loading && !error && <div role="status" className="loading-bar">Atualizando dados…</div>}
@@ -102,7 +103,8 @@ export default function App() {
   }, []);
   if (checking) return <div className="empty-state" role="status">Carregando sua sessão…</div>;
   const exit = async () => {
-    if (!demo && supabase) { const {error} = await supabase.auth.signOut(); if (error) {setAuthError('Não foi possível sair. Verifique sua conexão e tente novamente.');return;} }
+    // Revoke the session on the server; if the network fails, still clear this device so nobody stays signed in.
+    if (!demo && supabase) { const {error} = await supabase.auth.signOut(); if (error) await supabase.auth.signOut({scope:'local'}).catch(() => {}); }
     try { sessionStorage.removeItem('oliveira-demo-session'); } catch { /* The demo works without optional session storage. */ }
     setDemo(false);setUser(null);setAuthError('');window.location.hash = '';
   };

@@ -8,7 +8,7 @@ import {billing,billingAction,disconnect,domainAuth,syncGoogle} from '../server/
 import {webhookEvents} from '../src/lib/settings-types.js';
 import {resolveWebhook} from '../server/webhooks.js';
 import {whatsappConnect,whatsappDiagnosis,whatsappRepair} from '../server/whatsapp-settings.js';
-import {contactSummary,sendChannelMessage} from '../server/channels.js';
+import {contactSummary,sendChannelMessage,startWhatsApp} from '../server/channels.js';
 export const config={maxDuration:60};
 async function settings(a:Access){
  const [accounts,s]=await Promise.all([a.db.from('integration_accounts').select('provider,label,connected_at,synced_at,metadata').eq('user_id',a.ownerId),a.db.from('workspace_settings').upsert({user_id:a.ownerId,config:a.settings},{onConflict:'user_id',ignoreDuplicates:true}).select('widget_key').maybeSingle()]);
@@ -107,9 +107,10 @@ export default async function handler(req:VercelRequest,res:VercelResponse){
  }
  if(b.action==='contact.summary'){const c=await contactAccess(a,b.contactId);return res.status(200).json(await contactSummary(a,c));}
  if(b.action==='channel.send'){return res.status(202).json(await sendChannelMessage(a,b));}
+ if(b.action==='whatsapp.start'){const result=await startWhatsApp(a,b);await audit(a,'Iniciou conversa pelo WhatsApp');return res.status(202).json(result);}
  if(b.action==='file.upload'){
   const c=await contactAccess(a,b.contactId),name=text(b.name,200,true),mime=text(b.mime,100,true),base64=text(b.base64,2800000,true);
-  if(!['application/pdf','text/plain','text/markdown','image/png','image/jpeg','image/webp'].includes(mime)||!/^[-\w .()áéíóúãõçÁÉÍÓÚÃÕÇ]+$/.test(name)||!/^[-A-Za-z0-9+/=]+$/.test(base64))throw new HttpError(400,'Envie um PDF, texto ou imagem com nome válido.');const bytes=Buffer.from(base64,'base64');if(!bytes.length||bytes.length>2097152)throw new HttpError(413,'Use um arquivo de até 2 MB.');const path=`${a.ownerId}/${c.id}/${randomToken()}/${name}`;
+  if(!['application/pdf','text/plain','text/markdown','image/png','image/jpeg','image/webp'].includes(mime)||!/^[-\w .()áéíóúãõçÁÉÍÓÚÃÕÇ]+$/.test(name)||name.startsWith('.')||name.includes('..')||!/^[-A-Za-z0-9+/=]+$/.test(base64))throw new HttpError(400,'Envie um PDF, texto ou imagem com nome válido.');const bytes=Buffer.from(base64,'base64');if(!bytes.length||bytes.length>2097152)throw new HttpError(413,'Use um arquivo de até 2 MB.');const path=`${a.ownerId}/${c.id}/${randomToken()}/${name}`;
   const uploaded=await a.db.storage.from('crm-files').upload(path,bytes,{contentType:mime});if(uploaded.error)throw new HttpError(503,'Não foi possível salvar o arquivo. Confira o bucket privado crm-files.');const saved=await a.db.from('contact_files').insert({user_id:a.ownerId,contact_id:c.id,name,mime,bytes:bytes.length,storage_path:path}).select().single();if(saved.error){await a.db.storage.from('crm-files').remove([path]);throw new HttpError(503,'Não foi possível registrar o arquivo.');}return res.status(201).json({file:saved.data});
  }
  if(b.action==='file.download'||b.action==='file.remove'){

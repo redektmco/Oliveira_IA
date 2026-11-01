@@ -28,7 +28,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const repository=createRepository(settings);
     repository.authenticate=async()=>({id:scope.ownerId});
     const conversation=repository.conversation.bind(repository);
-    repository.conversation=async(owner,id)=>{const cv=await conversation(owner,id);if(cv?.contact_id)await contactAccess(scope,cv.contact_id);return cv;};
+    repository.conversation=async(owner,id)=>{const cv=await conversation(owner,id);if(cv&&scope.role==='seller'&&!cv.contact_id)throw new HttpError(404,'Conversa não encontrada ou sem acesso.');if(cv?.contact_id)await contactAccess(scope,cv.contact_id);return cv;};
     const answer = await executeChat(input, token, {
       repository,
       claude: createClaude(settings.anthropicKey),
