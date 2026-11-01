@@ -1,3 +1,4 @@
+import SettingsHub from '../settings/SettingsHub';
 import { useEffect, useState } from 'react';
 import { useWorkspace } from '../lib/workspace';
 import { Badge, Button, PageHeader } from '../components/ui';
@@ -38,6 +39,7 @@ export default function Settings({section = 'settings'}: {section?: string}) {
       <div className="table-card"><table><thead><tr><th>DATA</th><th>MODELO</th><th>ENTRADA</th><th>SAÍDA</th><th>ESTADO</th></tr></thead><tbody>{[...data.ai_usage].reverse().map(u => <tr key={u.id}><td>{new Date(u.created_at).toLocaleString('pt-BR')}</td><td>{u.model}</td><td>{u.input_tokens}</td><td>{u.output_tokens}</td><td><Badge tone={u.status === 'completed' ? 'success' : u.status === 'failed' ? 'danger' : 'warning'}>{u.status === 'completed' ? 'Concluído' : u.status === 'failed' ? 'Falhou' : 'Pendente'}</Badge></td></tr>)}</tbody></table>{!data.ai_usage.length && <div className="empty-state">Ainda não há chamadas registradas.</div>}</div>
     </div>;
   }
+  if (section === 'settings') return <SettingsHub/>;
   return <div className="content"><PageHeader title={section === 'integrations' ? 'Integrações' : 'Configurações'} description="Conexões e requisitos da sua operação comercial."/>
     <div className="setup-grid">
       <div className="card setup-card"><div className="setup-title"><b>Claude · Anthropic</b><Badge tone={demo ? 'warning' : 'info'}>{demo ? 'Demonstração' : 'Consulte o status abaixo'}</Badge></div><p>Os agentes usam a API da Anthropic pelo servidor. Sua chave fica nas variáveis privadas da Vercel.</p><ul><li>ANTHROPIC_API_KEY com créditos disponíveis.</li><li>Agente ativo com instruções e modelo configurados.</li><li>Limite padrão: 50 tentativas por conta/dia.</li></ul></div>

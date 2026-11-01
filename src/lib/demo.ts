@@ -6,9 +6,9 @@ export function loadDemo(): DatabaseState {
     const saved = localStorage.getItem(key);
     if (saved) {
       const parsed = JSON.parse(saved);
-      if (Object.keys(emptyState()).every(k => Array.isArray(parsed[k]))) {
+      if (['contacts','deals','agents','knowledge','conversations','messages','meetings','ai_usage'].every(k => Array.isArray(parsed[k]))) {
         // Upgrade only the original sample identity; retain saved CRM data and custom agents.
-        const data = parsed as DatabaseState;
+        const data = {...emptyState(), ...parsed} as DatabaseState;
         return {...data, agents: data.agents.map(agent => agent.id === 'demo-agent' && agent.name === 'Ana SDR'
           ? {...agent, name: 'Felipa', greeting: agent.greeting === 'Olá! Sou a Ana, assistente virtual da Oliveira & Co. Como posso ajudar?'
             ? 'Olá! Sou a Felipa, assistente virtual da Oliveira & Co. Como posso ajudar?'

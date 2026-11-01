@@ -1,5 +1,7 @@
 import { Component, useEffect, useRef, useState, type ErrorInfo, type ReactNode } from 'react';
 import type { User } from '@supabase/supabase-js';
+import MfaGate from './components/MfaGate';
+import Notifications from './components/Notifications';
 import Auth from './components/Auth';
 import { Avatar, Button, Icon, type IconName } from './components/ui';
 import { supabase } from './lib/supabase';
@@ -54,7 +56,7 @@ function Shell({demo, user, onExit}: {demo: boolean; user: User | null; onExit: 
     return () => { document.removeEventListener('keydown', key); document.body.style.overflow = previousOverflow; menuButton.current?.focus(); };
   }, [open, mobile]);
   const [query, setQuery] = useState('');
-  const {error,loading,refresh,data} = useWorkspace();
+  const {error,loading,refresh,data,workspaceName,logo,workspaces,ownerId,switchWorkspace} = useWorkspace();
   const [retryError,setRetryError] = useState('');
   useEffect(() => { const listener = () => { setPage(hashPage()); setContactId(window.location.hash.split('/')[1] || ''); }; window.addEventListener('hashchange',listener); return () => window.removeEventListener('hashchange',listener); }, []);
   const go = (next: string) => {window.location.hash = next; setPage(next);setOpen(false);};
@@ -65,11 +67,11 @@ function Shell({demo, user, onExit}: {demo: boolean; user: User | null; onExit: 
     <a href="#main-content" className="skip-link">Pular para o conteúdo</a>
     <aside ref={sidebar} inert={mobile && !open} className={`sidebar ${open ? 'mobile-open' : ''}`} aria-label="Navegação principal">
       <div className="brand"><span className="brand-mark">V4</span><div><b>SDR AI</b><span>por Oliveira & Co.</span></div><button className="mobile-close icon-btn" aria-label="Fechar menu" onClick={() => setOpen(false)}>×</button></div>
-      <div className="org-switcher"><span className="org-avatar">OC</span><span><b>Oliveira & Co.</b><small>{demo ? 'Demonstração local' : 'Meu workspace'}</small></span><Icon name="building" size={15}/></div>
+      <div className="org-switcher">{logo?<img className="org-avatar" src={logo} alt=""/>:<span className="org-avatar">{workspaceName.split(" ").filter(Boolean).map(w=>w[0]).slice(0,2).join("")}</span>}<span><b>{workspaceName}</b>{workspaces.length>1?<select aria-label="Selecionar workspace" value={ownerId} onChange={e=>switchWorkspace(e.target.value)}>{workspaces.map(w=><option key={w.id} value={w.id}>{w.name}</option>)}</select>:<small>{demo ? 'Demonstração local' : 'Meu workspace'}</small>}</span><Icon name="building" size={15}/></div>
       <nav>{groups.map(group => <div className="nav-group" key={group.label}><div className="nav-label">{group.label}</div>{group.items.map(item => <button key={item.id} className={page === item.id ? 'active' : ''} aria-current={page === item.id ? 'page' : undefined} onClick={() => go(item.id)}><Icon name={item.icon}/><span>{item.label}</span></button>)}</div>)}</nav>
       <div className="sidebar-footer"><button className="help-card" onClick={() => go('settings')}><Icon name="spark"/><div><b>Sua operação começa aqui</b><span>Conexões e próximos passos</span></div><Icon name="chevron" size={14}/></button><button className="user-profile" onClick={onExit} title="Sair"><Avatar name={name}/><span><b>{name}</b><small>{demo ? 'Sair da demonstração' : 'Sair da conta'}</small></span><Icon name="arrow" size={16}/></button></div>
     </aside>
-    <div className="main-shell"><header className="topbar"><button ref={menuButton} className="mobile-menu" aria-label="Abrir menu" aria-expanded={open} onClick={() => setOpen(true)}>☰</button><div className="breadcrumb"><span>{profileContact ? "Contatos" : "Oliveira & Co."}</span><Icon name="chevron" size={13}/><b>{profileContact?.name || label}</b></div><form className="global-search" onSubmit={e => {e.preventDefault(); go('contacts');}}><Icon name="search" size={16}/><input aria-label="Buscar contatos" placeholder="Buscar contatos…" value={query} onChange={e => setQuery(e.target.value)}/><button aria-label="Pesquisar" className="search-submit">↵</button></form><button className="top-avatar" title={name} aria-label="Ir para configurações" onClick={() => go('settings')}>OC</button></header>
+    <div className="main-shell"><header className="topbar"><button ref={menuButton} className="mobile-menu" aria-label="Abrir menu" aria-expanded={open} onClick={() => setOpen(true)}>☰</button><div className="breadcrumb"><span>{profileContact ? "Contatos" : workspaceName}</span><Icon name="chevron" size={13}/><b>{profileContact?.name || label}</b></div><form className="global-search" onSubmit={e => {e.preventDefault(); go('contacts');}}><Icon name="search" size={16}/><input aria-label="Buscar contatos" placeholder="Buscar contatos…" value={query} onChange={e => setQuery(e.target.value)}/><button aria-label="Pesquisar" className="search-submit">↵</button></form><Notifications/><button className="top-avatar" title={name} aria-label="Ir para configurações" onClick={() => go('settings')}>OC</button></header>
       {demo && <div className="demo-banner"><span><b>Demonstração</b> · Dados locais de exemplo. A IA e os canais externos não estão conectados.</span><button onClick={onExit}>Conectar minha conta →</button></div>}
       <main id="main-content" tabIndex={-1}>{error && <div className="error-banner" role="alert"><span>{error} {retryError}</span><Button disabled={loading} onClick={() => {setRetryError(''); refresh().catch(() => setRetryError('A conexão continua indisponível.'));}}>Tentar novamente</Button></div>}
         {loading && !error && <div role="status" className="loading-bar">Atualizando dados…</div>}
@@ -89,7 +91,7 @@ export default function App() {
   const [user,setUser] = useState<User | null>(null);
   const [checking,setChecking] = useState(Boolean(supabase));
   const [demo,setDemo] = useState(hasDemoSession);
-  const [recovery,setRecovery] = useState(false);
+  const [recovery,setRecovery] = useState(()=>new URLSearchParams(window.location.hash.slice(1)).get('type')==='invite');
   const [authError,setAuthError] = useState('');
   useEffect(() => {
     if (!supabase) return;
@@ -104,5 +106,5 @@ export default function App() {
     try { sessionStorage.removeItem('oliveira-demo-session'); } catch { /* The demo works without optional session storage. */ }
     setDemo(false);setUser(null);setAuthError('');window.location.hash = '';
   };
-  return <ErrorBoundary>{authError && <div className="error-banner" role="alert">{authError}</div>}{(!user && !demo) || recovery ? <Auth recovery={recovery} onDemo={() => {try {sessionStorage.setItem('oliveira-demo-session','active');} catch { /* optional */ } setDemo(true);}}/> : <WorkspaceProvider key={demo ? 'demo' : user!.id} demo={demo} userId={user?.id || null}><Shell demo={demo} user={user} onExit={() => {void exit();}}/></WorkspaceProvider>}</ErrorBoundary>;
+  return <ErrorBoundary>{authError && <div className="error-banner" role="alert">{authError}</div>}{(!user && !demo) || recovery ? <Auth recovery={recovery} onDemo={() => {try {sessionStorage.setItem('oliveira-demo-session','active');} catch { /* optional */ } setDemo(true);}}/> : <MfaGate onExit={()=>{void exit();}}><WorkspaceProvider key={demo ? 'demo' : user!.id} demo={demo} userId={user?.id || null}><Shell demo={demo} user={user} onExit={() => {void exit();}}/></WorkspaceProvider></MfaGate>}</ErrorBoundary>;
 }

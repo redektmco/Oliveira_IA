@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import {access,contactAccess} from '../server/access.js';
 import { createClaude } from '../server/anthropic.js';
 import { executeChat } from '../server/chat.js';
 import { createRepository, serverConfig } from '../server/supabase.js';
@@ -20,12 +21,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       throw new HttpError(415, 'Use Content-Type: application/json.');
     }
     const input = parseChatInput(req.body);
+    const scope = await access(req);
+    if(scope.role==='seller'&&!input.conversationId)throw new HttpError(403,'Vendedores usam a IA nas conversas atribuídas.');
     const settings = serverConfig();
+    const repository=createRepository(settings);
+    repository.authenticate=async()=>({id:scope.ownerId});
+    const conversation=repository.conversation.bind(repository);
+    repository.conversation=async(owner,id)=>{const cv=await conversation(owner,id);if(cv?.contact_id)await contactAccess(scope,cv.contact_id);return cv;};
     const answer = await executeChat(input, token, {
-      repository: createRepository(settings),
+      repository,
       claude: createClaude(settings.anthropicKey),
       configuredModel: settings.configuredModel,
       dailyRequestLimit: settings.dailyRequestLimit,
+      language:scope.settings.general.language,
     });
     return res.status(200).json(answer);
   } catch (error) {

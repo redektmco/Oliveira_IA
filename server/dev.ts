@@ -1,5 +1,9 @@
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import workspace from '../api/workspace.js';
+import oauth from '../api/oauth.js';
+import publicApi from '../api/public.js';
+import providerWebhook from '../api/provider-webhook.js';
 import chat from '../api/chat.js';
 import health from '../api/health.js';
 import webhook from '../api/whatsapp-webhook.js';
@@ -22,18 +26,24 @@ async function dispatch(req: IncomingMessage, res: ServerResponse) {
   const response = res as unknown as VercelResponse;
   response.status = function (status: number) { res.statusCode = status; return response; };
   response.json = function (body: unknown) { res.end(JSON.stringify(body)); return response; };
-  const path = new URL(req.url || '/', 'http://localhost').pathname;
-  if (!['/api/chat', '/api/health', '/api/whatsapp-status','/api/whatsapp-webhook','/api/whatsapp-worker','/api/whatsapp-send','/api/whatsapp-admin'].includes(path)) return response.status(404).json({ error: 'Endpoint não encontrado.' });
+  const url = new URL(req.url || '/', 'http://localhost');
+  const path = url.pathname;
+  if (!['/api/workspace','/api/oauth','/api/public','/api/provider-webhook','/api/chat', '/api/health', '/api/whatsapp-status','/api/whatsapp-webhook','/api/whatsapp-worker','/api/whatsapp-send','/api/whatsapp-admin'].includes(path)) return response.status(404).json({ error: 'Endpoint não encontrado.' });
   const request = req as VercelRequest;
+  request.query = Object.fromEntries(url.searchParams);
   let size = 0;
   const chunks: Buffer[] = [];
   for await (const chunk of req) {
     const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
     size += buffer.length;
-    if (size > MAX_BODY_BYTES) return response.status(413).json({ error: 'O pedido excede o tamanho permitido.' });
+    if (size > (path === '/api/workspace' ? 3*1024*1024 : MAX_BODY_BYTES)) return response.status(413).json({ error: 'O pedido excede o tamanho permitido.' });
     chunks.push(buffer);
   }
   request.body = Buffer.concat(chunks).toString('utf8');
+  if (path === '/api/workspace') return workspace(request,response);
+  if (path === '/api/oauth') return oauth(request,response);
+  if (path === '/api/public') return publicApi(request,response);
+  if (path === '/api/provider-webhook') return providerWebhook(request,response);
   if (path === '/api/whatsapp-webhook') return webhook(request,response);
   if (path === '/api/whatsapp-worker') return worker(request,response);
   if (path === '/api/whatsapp-send') return send(request,response);

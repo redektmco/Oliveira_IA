@@ -1,3 +1,6 @@
+import {adminDb} from './access.js';
+import {mergeSettings} from '../src/lib/settings-types.js';
+import {nextOpenAt,withinSchedule} from './schedules.js';
 import {createClient} from '@supabase/supabase-js';
 import {serverConfig,createRepository} from './supabase.js';
 import {createClaude} from './anthropic.js';
@@ -7,7 +10,7 @@ import {dailyLimit,resolveModel,HttpError} from './validation.js';
 import {DeliveryError,ensureWhatsAppConnected,sendWhatsAppText} from './whatsapp-provider.js';
 import type {IncomingWhatsApp} from './whatsapp-events.js';
 export type WhatsAppJob={id:string;user_id:string;instance:string;remote_jid:string;conversation_id:string;incoming_id:string;outgoing_id:string|null;kind:'inbound'|'human';body:string;reply:string|null;lease_token:string;attempts:number};
-export function bridgeDb(){const c=serverConfig();return createClient(c.supabaseUrl,c.serviceKey,{auth:{autoRefreshToken:false,persistSession:false},global:{fetch:(input,init)=>fetch(input,{...init,signal:init?.signal?AbortSignal.any([init.signal,AbortSignal.timeout(10000)]):AbortSignal.timeout(10000)})}});}
+export function bridgeDb(){return adminDb();}
 export async function bridgeRpc<T=unknown>(name:string,args:Record<string,unknown>={}){const r=await bridgeDb().rpc(name,args);if(r.error)throw new HttpError(503,'Não foi possível processar a fila WhatsApp.');return r.data as T;}
 export async function ingestWhatsApp(e:IncomingWhatsApp){return bridgeRpc<{queued?:boolean;duplicate?:boolean}>('whatsapp_ingest',{p_instance:e.instance,p_jid:e.jid,p_event_id:e.eventId,p_text:e.text,p_name:e.name,p_from_me:e.fromMe,p_needs_human:e.needsHuman,p_event_time:e.eventTime});}
 export async function processWhatsAppJob(job:WhatsAppJob){
@@ -15,6 +18,14 @@ export async function processWhatsAppJob(job:WhatsAppJob){
  let deliveryStarted=false;
  const finish=(result:string,error:string|null=null,id:string|null=null)=>bridgeRpc('whatsapp_finish',{p_id:job.id,p_lease:job.lease_token,p_result:result,p_provider_id:id,p_error:error});
  try{
+  const storedSettings=await db.from('workspace_settings').select('config').eq('user_id',job.user_id).maybeSingle();
+  if(storedSettings.error)throw new HttpError(503,'Configurações indisponíveis.');
+  const preferences=mergeSettings(storedSettings.data?.config);
+  if(job.kind==='inbound'){
+   if(!preferences.whatsapp.autoReply){await finish('skipped','auto_reply_paused');return;}
+   if(preferences.whatsapp.humanHandoff&&/(?:falar|conversar|atendimento).{0,30}(?:humano|pessoa|atendente|vendedor)|(?:quero|preciso).{0,20}(?:humano|atendente)/i.test(job.body)){await db.from('conversations').update({status:'human'}).eq('id',job.conversation_id).eq('user_id',job.user_id);await finish('skipped','requested_human');return;}
+   if(!withinSchedule(preferences.whatsapp.schedule,preferences.general.timezone)){await bridgeRpc('whatsapp_defer',{p_id:job.id,p_lease:job.lease_token,p_until:nextOpenAt(preferences.whatsapp.schedule,preferences.general.timezone).toISOString()});return;}
+  }
   if(!job.reply){
    const channel=await db.from('whatsapp_channels').select('ai_allowlist,enabled').eq('instance',job.instance).eq('user_id',job.user_id).single();
    if(channel.error)throw new HttpError(503,'Vínculo indisponível.');
@@ -35,7 +46,7 @@ export async function processWhatsAppJob(job:WhatsAppJob){
    let completed=false;
    try{
     const knowledge=await repository.knowledge(job.user_id);
-    const answer=await createClaude(c.anthropicKey).answer({model,structured:true,system:buildSystemPrompt(agent,knowledge)+'\n\n'+triagePrompt(contact,contactHistory),messages:buildMessages(history.data.reverse().filter(m=>(m.role!=='user'||m.created_at<=current.data.created_at)&&!['canceled','failed','uncertain'].includes(m.delivery_status)).map(m=>({role:m.role==='user'?'user' as const:'assistant' as const,content:m.content})),job.body)});
+    const answer=await createClaude(c.anthropicKey).answer({model,structured:true,system:buildSystemPrompt(agent,knowledge,preferences.general.language)+'\n\n'+triagePrompt(contact,contactHistory),messages:buildMessages(history.data.reverse().filter(m=>(m.role!=='user'||m.created_at<=current.data.created_at)&&!['canceled','failed','uncertain'].includes(m.delivery_status)).map(m=>({role:m.role==='user'?'user' as const:'assistant' as const,content:m.content})),job.body)});
     if(!answer.text.trim())throw new HttpError(502,'Resposta vazia.');
     await repository.completeUsage(job.user_id,usageId,answer.usage);completed=true;
     const parsed=parseTriageAnswer(answer.text,agent.qualification_threshold);
@@ -44,6 +55,7 @@ export async function processWhatsAppJob(job:WhatsAppJob){
     job.reply=parsed.reply;
    }catch(e){if(!completed)await repository.failUsage(job.user_id,usageId).catch(()=>{});throw e;}
   }
+  if(job.kind==='inbound'&&preferences.whatsapp.typingMax>0){const delay=preferences.whatsapp.typingMin+Math.random()*(preferences.whatsapp.typingMax-preferences.whatsapp.typingMin);await new Promise(resolve=>setTimeout(resolve,delay*1000));}
   // Check connectivity before entering the non-repeatable external send phase.
   await ensureWhatsAppConnected();
   const send=await bridgeRpc<boolean>('whatsapp_prepare_send',{p_id:job.id,p_lease:job.lease_token});

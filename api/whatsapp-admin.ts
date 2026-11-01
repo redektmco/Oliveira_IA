@@ -1,4 +1,5 @@
 import type {VercelRequest,VercelResponse} from '@vercel/node';
+import {access,requireRole} from '../server/access.js';
 import {bridgeDb} from '../server/whatsapp-bridge.js';
 import {evolutionConfig} from '../server/evolution.js';
 import {evolutionRequest,sendWhatsAppText,ensureWhatsAppConnected} from '../server/whatsapp-provider.js';
@@ -14,7 +15,7 @@ export default async function handler(req:VercelRequest,res:VercelResponse){
  if(!['GET','POST'].includes(req.method||''))return res.status(405).json({error:'Método não permitido.'});
  try{
   const internal=secretMatches(req.headers.authorization,process.env.WHATSAPP_WORKER_SECRET?`Bearer ${process.env.WHATSAPP_WORKER_SECRET}`:undefined);
-  if(!internal){const token=parseBearerToken(req.headers.authorization);const user=await createRepository(serverConfig()).authenticate(token);if(user.id!==process.env.WHATSAPP_OWNER_USER_ID)throw new HttpError(403,'O WhatsApp pertence a outra conta.');}
+  if(!internal){const scope=await access(req);requireRole(scope);if(scope.ownerId!==process.env.WHATSAPP_OWNER_USER_ID)throw new HttpError(403,'O WhatsApp pertence a outra conta.');}
   const c=evolutionConfig(),db=bridgeDb();
   if(req.method==='GET'){
    const w=await webhook(),ch=await db.from('whatsapp_channels').select('enabled,webhook_verified,agent_id,activated_at').eq('instance',c.instance).maybeSingle();

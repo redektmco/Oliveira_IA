@@ -10,6 +10,8 @@ import {
 } from "../lib/types";
 import Meetings from "./Meetings";
 import "./profile.css";
+import {formatPhone} from "../lib/phone";
+import {Dialog,Field,usePanelData} from "../settings/shared";
 
 const date = (value: string) =>
   new Date(value).toLocaleString("pt-BR", {
@@ -32,7 +34,12 @@ export default function ContactProfile({
   contact: Contact;
   onEdit: () => void;
 }) {
-  const { data, demo, create, update, askClaude, refresh } = useWorkspace();
+  const { data, demo, create, update, askClaude, refresh,api,role,phoneFormat } = useWorkspace();
+  const context=usePanelData<any>(()=>api('contact.context'),[api]);
+  const attachment=useRef<HTMLInputElement>(null);
+  const attachedFiles=data.contact_files.filter(f=>f.contact_id===contact.id);
+  const internalNotes=data.contact_notes.filter(n=>n.contact_id===contact.id);
+  const [editingAction,setEditingAction]=useState(false),[nextActionDraft,setNextActionDraft]=useState('');
   const pendingSend = useRef<{ text: string; conversationId: string; id: string } | null>(null);
   useEffect(() => {
     if (demo) return;
@@ -72,6 +79,9 @@ export default function ContactProfile({
     .filter((d) => d.contact_id === contact.id)
     .sort((a, b) => b.created_at.localeCompare(a.created_at));
   const triage = contact.triage;
+  const manualNewer=Boolean(contact.ai_summary&&(!contact.triage_updated_at||(contact.summary_at||'')>contact.triage_updated_at));
+  const summary=manualNewer?contact.ai_summary:triage?.summary;
+  const nextAction=contact.ai_next_action||triage?.next_action||'';
   const pipeline = [
     "new",
     "qualifying",
@@ -124,17 +134,7 @@ export default function ContactProfile({
   const saveNote = (event: FormEvent) => {
     event.preventDefault();
     void run(async () => {
-      const next = [
-        contact.notes,
-        `[${date(new Date().toISOString())}]\n${note.trim()}`,
-      ]
-        .filter(Boolean)
-        .join("\n\n");
-      if (next.length > 12000)
-        throw new Error(
-          "O limite de notas desta ficha foi atingido. Edite as notas antes de adicionar outra.",
-        );
-      await update("contacts", contact.id, { notes: next });
+      await create('contact_notes',{contact_id:contact.id,content:note.trim()});
       setNote("");
     }, "Nota salva.");
   };
@@ -143,16 +143,10 @@ export default function ContactProfile({
     if (!conversation || !draft.trim()) return;
     void run(async () => {
       if (conversation.status === "human") {
-        if (conversation.channel === 'whatsapp' && !demo) {
-          const { data: session } = await supabase!.auth.getSession();
-          if (!session.session) throw new Error('Sua sessão expirou.');
-          const text = draft.trim();
-          if (!pendingSend.current || pendingSend.current.text !== text || pendingSend.current.conversationId !== conversation.id) pendingSend.current = {text, conversationId: conversation.id, id: crypto.randomUUID()};
-          const response = await fetch('/api/whatsapp-send', { method: 'POST', headers: {'Content-Type': 'application/json', Authorization: `Bearer ${session.session.access_token}`}, body: JSON.stringify({conversationId: conversation.id, requestId: pendingSend.current.id, text}), signal: AbortSignal.timeout(25000) });
-          const result = await response.json().catch(() => ({}));
-          if (!response.ok) throw new Error(result.error || 'Não foi possível enfileirar a mensagem.');
-          pendingSend.current = null;
-          await refresh(true).catch(() => {});
+        if (conversation.channel !== 'web' && !demo) {
+          const text=draft.trim();
+          if(!pendingSend.current||pendingSend.current.text!==text||pendingSend.current.conversationId!==conversation.id)pendingSend.current={text,conversationId:conversation.id,id:crypto.randomUUID()};
+          await api('channel.send',{conversationId:conversation.id,requestId:pendingSend.current.id,text});pendingSend.current=null;await refresh(true).catch(()=>{});
         } else await create("messages", { conversation_id: conversation.id, role: "human", content: draft.trim() });
       } else if (conversation.status === "ai" && agent?.active && conversation.channel === 'web') {
         await askClaude({ agentId: agent.id, conversationId: conversation.id, message: draft.trim() });
@@ -219,7 +213,7 @@ export default function ContactProfile({
                   .join(" · ") || "Empresa não informada"}
               </span>
               {contact.city && <span>{contact.city}</span>}
-              <span>{contact.phone || "Telefone não informado"}</span>
+              <span>{formatPhone(contact.phone,phoneFormat) || "Telefone não informado"}</span>
               <span>
                 Lead desde{" "}
                 {new Date(contact.created_at).toLocaleDateString("pt-BR")}
@@ -334,15 +328,16 @@ export default function ContactProfile({
                 </span>
                 Resumo da IA
               </h2>
+              <button className="profile-link" disabled={demo||busy||!messages.length} onClick={()=>void run(async()=>{await api('contact.summary',{contactId:contact.id});await refresh();},'Resumo atualizado.')}>{summary?'Atualizar resumo':'Gerar resumo'}</button>
               <small>
                 {triage && contact.triage_updated_at
                   ? `Atualizado em ${date(contact.triage_updated_at)}`
                   : "Aguardando conversa"}
               </small>
             </div>
-            {triage ? (
+            {summary ? (
               <>
-                <p>{triage.summary}</p>
+                <p>{summary}</p>
                 <small className="crm-note">
                   {contact.triage_message_count ?? messages.length} mensagens no
                   histórico · análise do contexto recente e resumo anterior
@@ -353,18 +348,18 @@ export default function ContactProfile({
                 <div className="profile-next">
                   <div>
                     <span className="eyebrow">PRÓXIMA AÇÃO SUGERIDA</span>
-                    <p>{triage.next_action}</p>
+                    <p>{nextAction}</p>
                   </div>
                   <button
                     className="btn"
                     disabled={busy}
                     onClick={() => {
-                      setNote(triage.next_action);
+                      setNote(nextAction);
                       setTab("Notas");
                     }}
                   >
                     Adicionar às notas
-                  </button>
+                  </button><button className="btn" onClick={()=>{setNextActionDraft(nextAction);setEditingAction(true);}}>Editar</button><button className="btn btn-primary" disabled={busy||!conversation||demo} onClick={()=>void run(async()=>{if(!conversation)return;await update("conversations",conversation.id,{status:"human"});setDraft(nextAction);setTab("Conversa");})}>Revisar e enviar</button>
                 </div>
               </>
             ) : (
@@ -435,7 +430,7 @@ export default function ContactProfile({
                   {item === "Conversa" && <span>{messages.length}</span>}
                   {item === "Reuniões" && <span>{meetings.length}</span>}
                   {item === "Arquivos" && (
-                    <span>{contact.files?.length ?? 0}</span>
+                    <span>{(contact.files?.length ?? 0)+attachedFiles.length}</span>
                   )}
                 </button>
               ))}
@@ -448,7 +443,8 @@ export default function ContactProfile({
             >
               {tab === "Atividade" && (
                 <div className="profile-timeline">
-                  {[...messages]
+                  {internalNotes.slice().reverse().map(n=><article key={n.id}><span className="timeline-icon"><Icon name="book" size={14}/></span><div><b>Nota interna{n.author?` · ${n.author}`:''}</b><p>{n.content}</p><time>{date(n.created_at)}</time></div></article>)}
+                  {[...messages].filter(m=>context.data?.preferences?.recordHistory!==false||m.role!=='assistant')
                     .reverse()
                     .slice(0, 30)
                     .map((message) => (
@@ -561,7 +557,7 @@ export default function ContactProfile({
                                   : "Equipe"}
                             </b>
                             <p>{m.content}</p>
-                            <time>{date(m.created_at)}{m.delivery_status && !["stored", "received"].includes(m.delivery_status) ? ` · ${{queued: "Na fila", sending: "Enviando", sent: "Enviado", delivered: "Entregue", read: "Lido", failed: "Falhou", uncertain: "Envio não confirmado — confira no WhatsApp", canceled: "Cancelado"}[m.delivery_status] || m.delivery_status}` : ""}</time>
+                            <time>{date(m.created_at)}{m.delivery_status && !["stored", "received"].includes(m.delivery_status) ? ` · ${{queued: "Na fila", sending: "Enviando", sent: "Enviado", delivered: "Entregue", read: "Lido", failed: "Falhou", uncertain: "Envio não confirmado — confira no canal", canceled: "Cancelado"}[m.delivery_status] || m.delivery_status}` : ""}</time>
                           </article>
                         ))
                       ) : (
@@ -579,7 +575,7 @@ export default function ContactProfile({
                             onChange={(e) => setDraft(e.target.value)}
                             maxLength={4000}
                             required
-                            disabled={busy || conversation.status === "closed" || (conversation.channel === "whatsapp" && conversation.status === "ai")}
+                            disabled={busy || conversation.status === "closed" || (conversation.channel !== "web" && conversation.status === "ai")}
                             placeholder="Escreva a mensagem…"
                           />
                         </label>
@@ -590,7 +586,7 @@ export default function ContactProfile({
                             !draft.trim() ||
                             conversation.status === "closed" ||
                             (conversation.status === "ai" &&
-                              (!agent?.active || demo || conversation.channel === "whatsapp"))
+                              (!agent?.active || demo || conversation.channel !== "web"))
                           }
                         >
                           {busy ? "Processando…" : "Enviar mensagem"}
@@ -607,10 +603,11 @@ export default function ContactProfile({
               )}
               {tab === "Notas" && (
                 <div className="profile-notes">
+                  {internalNotes.map(n=><article className="profile-internal-note" key={n.id}><small>{n.author||"Equipe"} · {date(n.created_at)}</small><p>{n.content}</p></article>)}
                   {contact.notes ? (
                     <p>{contact.notes}</p>
                   ) : (
-                    <p className="crm-note">Ainda não há notas internas.</p>
+                    <p className="crm-note">{internalNotes.length?"":"Ainda não há notas internas."}</p>
                   )}
                   <button className="btn btn-ghost" onClick={onEdit}>
                     Editar notas e cadastro
@@ -624,6 +621,8 @@ export default function ContactProfile({
                     acesso ao arquivo depende das permissões no serviço de
                     origem.
                   </p>
+                  <div className="profile-attachment-toolbar"><span>Envie PDF, texto ou imagens de até 2 MB.</span><button className="btn" disabled={demo||busy} onClick={()=>attachment.current?.click()}>Anexar arquivo</button><input type="file" hidden ref={attachment} accept=".pdf,.txt,.md,.png,.jpg,.jpeg,.webp" onChange={e=>{const file=e.target.files?.[0];if(!file)return;void run(async()=>{if(file.size>2097152)throw new Error('Use um arquivo de até 2 MB.');const base64=await new Promise<string>((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result).split(',')[1]);reader.onerror=()=>reject(new Error('Não foi possível ler o arquivo.'));reader.readAsDataURL(file);});await api('file.upload',{contactId:contact.id,name:file.name,mime:file.type||'text/plain',base64});await refresh();},'Arquivo anexado.');}}/></div>
+                  {attachedFiles.map(file=><div className="profile-file" key={file.id}><span>{file.name} · {Math.ceil(file.bytes/1024)} KB</span><button className="text-link" disabled={busy} onClick={()=>void run(async()=>{const result=await api('file.download',{id:file.id});location.assign(result.url);})}>Baixar</button><button className="btn btn-ghost" disabled={busy} onClick={()=>{if(confirm('Remover este arquivo?'))void run(async()=>{await api('file.remove',{id:file.id});await refresh();},'Arquivo removido.');}}>Remover</button></div>)}
                   {(contact.files ?? []).map((file) => (
                     <div className="profile-file" key={file.id}>
                       <a
@@ -820,7 +819,7 @@ export default function ContactProfile({
             </div>
             <dl>
               {[
-                ["Telefone", contact.phone],
+                ["Telefone", formatPhone(contact.phone,phoneFormat)],
                 ["E-mail", contact.email],
                 ["Empresa", contact.company],
                 ["Cargo", contact.job_title],
@@ -854,10 +853,11 @@ export default function ContactProfile({
                 <Icon name="users" size={18} />
               </span>
               <p>
-                <b>{contact.owner_name || "Responsável não definido"}</b>
+                <b>{context.data?.members?.find((m:any)=>m.user_id===contact.assigned_to)?.name||contact.owner_name || "Responsável não definido"}</b>
                 <small>Responsável comercial</small>
               </p>
             </div>
+            <Field label="Atribuir responsável"><select aria-label="Atribuir responsável" disabled={busy||role==='seller'} value={contact.assigned_to||''} onChange={e=>void run(()=>update('contacts',contact.id,{assigned_to:e.target.value||null}),'Responsável atualizado.')}><option value="">Não atribuído</option>{context.data?.members?.filter((m:any)=>m.user_id&&m.status==='active').map((m:any)=><option key={m.id} value={m.user_id}>{m.name||m.email||'Membro da equipe'}</option>)}</select></Field>
           </section>
           <section className="card profile-tags">
             <div className="profile-section-head">
@@ -926,6 +926,7 @@ export default function ContactProfile({
           </section>
         </aside>
       </div>
+      {editingAction&&<Dialog title="Editar próxima ação" onClose={()=>setEditingAction(false)} busy={busy} submitLabel="Salvar sugestão" onSubmit={e=>{e.preventDefault();void run(async()=>{await update("contacts",contact.id,{ai_next_action:nextActionDraft});setEditingAction(false);},"Sugestão atualizada.");}}><Field label="Próxima ação sugerida"><textarea rows={5} maxLength={4000} value={nextActionDraft} onChange={e=>setNextActionDraft(e.target.value)}/></Field></Dialog>}
     </div>
   );
 }

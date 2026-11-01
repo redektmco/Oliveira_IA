@@ -1,19 +1,21 @@
 export type Criterion = { score: number | null; evidence: string };
 export type Triage = { summary: string; next_action: string; criteria: Record<'budget' | 'need' | 'authority' | 'timing', Criterion>; score: number; status: 'qualifying' | 'qualified' | 'unqualified' };
-export type Contact = { id: string; name: string; email: string; phone: string; company: string; source: string; score: number; status: 'new' | 'qualifying' | 'qualified' | 'unqualified'; notes: string; created_at: string; job_title?: string; city?: string; owner_name?: string; tags?: string[]; files?: { id: string; name: string; url: string }[]; triage?: Triage | null; triage_updated_at?: string | null; triage_message_count?: number; crm_revision?: number };
+export type Contact = { id: string; name: string; email: string; phone: string; company: string; source: string; score: number; status: 'new' | 'qualifying' | 'qualified' | 'unqualified'; notes: string; assigned_to?: string | null; qualification?: {budget?: number;need?:number;authority?:number;timeline?:number};ai_summary?:string;ai_next_action?:string;summary_at?:string|null;consent_at?:string|null;consent_text?:string;created_at: string; job_title?: string; city?: string; owner_name?: string; tags?: string[]; files?: { id: string; name: string; url: string }[]; triage?: Triage | null; triage_updated_at?: string | null; triage_message_count?: number; crm_revision?: number };
 export type DealStage = 'new' | 'qualifying' | 'qualified' | 'meeting' | 'proposal' | 'won' | 'lost';
 export type Deal = { id: string; contact_id: string | null; title: string; value: number; stage: DealStage; created_at: string };
 export type Agent = { id: string; name: string; company: string; system_prompt: string; greeting: string; model: string; active: boolean; qualification_threshold: number; created_at: string };
 export type Knowledge = { id: string; title: string; content: string; created_at: string };
-export type Conversation = { id: string; contact_id: string | null; agent_id: string | null; channel: 'web' | 'whatsapp'; status: 'ai' | 'human' | 'closed'; created_at: string };
+export type Conversation = { id: string; contact_id: string | null; agent_id: string | null; channel: 'web' | 'whatsapp' | 'email' | 'instagram' | 'widget'; external_id?: string | null; status: 'ai' | 'human' | 'closed'; created_at: string };
 export type Message = { id: string; conversation_id: string; role: 'user' | 'assistant' | 'human'; content: string; delivery_status?: string; created_at: string };
 export type Meeting = { id: string; contact_id: string | null; title: string; starts_at: string; duration: number; location: string; status: 'scheduled' | 'completed' | 'cancelled'; created_at: string };
 export type Usage = { id: string; model: string; input_tokens: number; output_tokens: number; status: 'pending' | 'completed' | 'failed'; created_at: string };
-export interface Tables { contacts: Contact; deals: Deal; agents: Agent; knowledge: Knowledge; conversations: Conversation; messages: Message; meetings: Meeting; ai_usage: Usage }
+export type ContactNote = {id:string;contact_id:string;content:string;author?:string;created_at:string};
+export type ContactFile = {id:string;contact_id:string;name:string;mime:string;bytes:number;storage_path:string;created_at:string};
+export interface Tables { contact_notes: ContactNote; contact_files: ContactFile; contacts: Contact; deals: Deal; agents: Agent; knowledge: Knowledge; conversations: Conversation; messages: Message; meetings: Meeting; ai_usage: Usage }
 export type Table = keyof Tables;
 export type DatabaseState = { [K in Table]: Tables[K][] };
-export type EditableTable = Exclude<Table, 'ai_usage'>;
+export type EditableTable = Exclude<Table, 'ai_usage' | 'contact_files'>;
 export type RowInput<K extends Table> = Omit<Tables[K], 'id' | 'created_at'>;
-export const emptyState = (): DatabaseState => ({ contacts: [], deals: [], agents: [], knowledge: [], conversations: [], messages: [], meetings: [], ai_usage: [] });
+export const emptyState = (): DatabaseState => ({ contact_notes: [], contact_files: [], contacts: [], deals: [], agents: [], knowledge: [], conversations: [], messages: [], meetings: [], ai_usage: [] });
 export const stages: Record<DealStage, string> = { new: 'Novo lead', qualifying: 'Em qualificação', qualified: 'Qualificado', meeting: 'Reunião agendada', proposal: 'Proposta', won: 'Ganho', lost: 'Perdido' };
 export const contactStatuses: Record<Contact['status'], string> = { new: 'Novo', qualifying: 'Em qualificação', qualified: 'Qualificado', unqualified: 'Não qualificado' };

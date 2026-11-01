@@ -1,3 +1,5 @@
+import {access,safeError} from '../server/access.js';
+import {whatsappDiagnosis} from '../server/whatsapp-settings.js';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { evolutionConfig, readEvolutionStatus, type EvolutionStatus } from '../server/evolution.js';
 import {bridgeDb} from '../server/whatsapp-bridge.js';
@@ -29,7 +31,4 @@ export function createStatusHandler(deps: {
   };
 }
 
-export default createStatusHandler({
-  authenticate: async token => {const user=await createRepository(serverConfig()).authenticate(token);if(process.env.WHATSAPP_OWNER_USER_ID && user.id!==process.env.WHATSAPP_OWNER_USER_ID)throw new HttpError(403,'O WhatsApp pertence a outra conta.');return user;},
-  status: async () => {const c=evolutionConfig();const status=await readEvolutionStatus(c);const channel=await bridgeDb().from('whatsapp_channels').select('enabled,webhook_verified').eq('instance',c.instance).maybeSingle();return {...status,messagingEnabled:Boolean(channel.data?.enabled&&channel.data?.webhook_verified)};},
-});
+export default async function handler(req:VercelRequest,res:VercelResponse){res.setHeader('Cache-Control','private, no-store');if(req.method!=='GET')return res.status(405).json({error:'Use GET.'});try{return res.status(200).json(await whatsappDiagnosis(await access(req)));}catch(e){const safe=safeError(e);return res.status(safe.status).json({error:safe.error});}}

@@ -1,6 +1,6 @@
 import {evolutionConfig} from './evolution.js';
 export class DeliveryError extends Error{constructor(public code:string,public disposition:'retry'|'failed'|'uncertain'){super(code);}}
-export function evolutionUrl(path:string){const c=evolutionConfig();const u=new URL(c.endpoint);u.pathname=u.pathname.replace(/\/instance\/connectionState\/[^/]+$/,path.replace('{instance}',encodeURIComponent(c.instance)));return u.href;}
+export function evolutionUrl(path:string){const c=evolutionConfig();const u=new URL(c.endpoint);const [route,query]=path.split('?');u.pathname=u.pathname.replace(/\/instance\/connectionState\/[^/]+$/,route.replace('{instance}',encodeURIComponent(c.instance)));u.search=query||'';return u.href;}
 export async function evolutionRequest(path:string,method='GET',body?:unknown){
  const c=evolutionConfig();return fetch(evolutionUrl(path),{method,headers:{apikey:c.token,Accept:'application/json',...(body===undefined?{}:{'Content-Type':'application/json'})},body:body===undefined?undefined:JSON.stringify(body),redirect:'error',signal:AbortSignal.timeout(10000)});
 }

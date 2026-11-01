@@ -59,3 +59,7 @@ A pasta `.figma` e os plugins de ambiente Figma do ZIP original não são necess
 Entre em https://ai.v4oliveira.com.br/#contacts. No menu, escolha **Contatos / CRM** e clique em **Abrir ficha** ou no nome do cliente. A ficha tem URL própria `#contacts/ID_DO_CONTATO`, preservada ao recarregar.
 
 Antes de publicar esta atualização, aplique `supabase/migrations/202610300003_crm_triage.sql` no projeto Felipa IA existente. A migração é aditiva, mantém RLS, fila e whitelist WhatsApp.
+
+## Configurações e canais — implementação de 31/10/2026
+
+A implementação das dez telas adiciona equipe compartilhada com funções, configurações persistidas, diagnóstico/reconexão WhatsApp, OAuth Google/Instagram, widget, API/webhooks, integração Stripe, MFA, sessões e privacidade. A ficha e a triagem automática existentes foram preservadas. Consulte [a preparação, capacidades e dependências](docs/WORKSPACE.md) antes da publicação. As novas integrações só ficam ativas após configurar os serviços e autorizar as contas; os testes locais não comprovam operação em produção.

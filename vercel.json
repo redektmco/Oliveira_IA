@@ -21,11 +21,23 @@
     },
     "api/whatsapp-send.ts": {
       "maxDuration": 60
+    },
+    "api/workspace.ts": {
+      "maxDuration": 60
+    },
+    "api/oauth.ts": {
+      "maxDuration": 60
+    },
+    "api/public.ts": {
+      "maxDuration": 60
+    },
+    "api/provider-webhook.ts": {
+      "maxDuration": 60
     }
   },
   "rewrites": [
     {
-      "source": "/((?!api/|assets/|favicon.svg).*)",
+      "source": "/((?!api/|assets/|favicon.svg|widget\\.(?:html|js|css)|widget-client\\.js).*)",
       "destination": "/index.html"
     }
   ],
@@ -42,12 +54,26 @@
           "value": "strict-origin-when-cross-origin"
         },
         {
-          "key": "X-Frame-Options",
-          "value": "DENY"
-        },
-        {
           "key": "Permissions-Policy",
           "value": "camera=(), microphone=(), geolocation=()"
+        }
+      ]
+    },
+    {
+      "source": "/((?!widget\\.html).*)",
+      "headers": [
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        }
+      ]
+    },
+    {
+      "source": "/widget.html",
+      "headers": [
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self'; img-src 'self' data:; frame-ancestors https:; form-action 'none'; base-uri 'none'"
         }
       ]
     }

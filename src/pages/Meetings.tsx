@@ -51,6 +51,7 @@ export default function Meetings({ contactId, startOpen = false, onOpened }: { c
     setEditing(meeting); setForm(meeting ? { title: meeting.title, contact_id: meeting.contact_id, starts_at: meeting.starts_at, duration: meeting.duration, location: meeting.location, status: meeting.status } : { ...blankMeeting(), contact_id: contactId ?? null });
     setDateValue(localDateValue(meeting ? new Date(meeting.starts_at) : tomorrow())); setError(''); setSuccess('');
   };
+  useEffect(()=>{const params=new URLSearchParams(window.location.hash.split('?')[1]||'');const id=params.get('contact');if(window.location.hash.startsWith('#meetings/new')&&id){open(null);setForm(current=>({...current,contact_id:id,title:'Reunião comercial'}));history.replaceState(null,'','#meetings');}},[]);
   const save = async (event: FormEvent) => {
     event.preventDefault(); setBusy(true); setError('');
     try {
