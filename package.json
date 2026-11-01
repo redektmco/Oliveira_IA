@@ -20,6 +20,8 @@
     "deploy:production": "vercel --prod",
     "crm:check": "node --use-env-proxy --import tsx scripts/migrate-crm.ts --check",
     "crm:migrate": "node --use-env-proxy --import tsx scripts/migrate-crm.ts --apply",
+    "agent-tone:check": "node --use-env-proxy --import tsx scripts/migrate-agent-tone.ts --check",
+    "agent-tone:migrate": "node --use-env-proxy --import tsx scripts/migrate-agent-tone.ts --apply",
     "opportunities:check": "node --use-env-proxy --import tsx scripts/migrate-opportunities.ts --check",
     "opportunities:migrate": "node --use-env-proxy --import tsx scripts/migrate-opportunities.ts --apply",
     "workflows:check": "node --use-env-proxy --import tsx scripts/migrate-workflows.ts --check",

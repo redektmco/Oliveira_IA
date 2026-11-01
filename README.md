@@ -84,3 +84,7 @@ A tela inicial agora é o **assistente de IA**: conversa estilo chat que lê e o
 ### Automações (estilo Twenty CRM) — 01/11/2026
 
 Nova tela **Automações**: gatilho (registro criado/atualizado, mensagem recebida, agendado ou manual) + passos (condição, aguardar, atualizar/criar registro, etiquetas, WhatsApp, e-mail, HTTP/webhook, IA e notificação), com editor visual em fluxo e histórico de execuções por passo. O assistente da tela inicial também cria automações quando você pede ("quando uma oportunidade for ganha, crie uma tarefa de onboarding"): ele monta como rascunho, mostra o resumo e pergunta **"Posso ativar?"** antes de ligar. Veja [docs/WORKSPACE.md](docs/WORKSPACE.md#automações-estilo-twenty-crm). Exige `supabase/migrations/202611050008_workflows.sql` e `supabase/workflows-scheduler.sql`: `SUPABASE_PROJECT_REF=mdzflolthybnzewhpxno npm run workflows:migrate`, conferir com `npm run workflows:check`.
+
+### Tom de voz e pesos do agente
+
+O editor de agentes tem tom de voz e pesos dos quatro critérios de qualificação (a nota do lead é a média ponderada). Exige `supabase/migrations/202611060009_agent_tone_weights.sql`, aditiva e idempotente: `SUPABASE_PROJECT_REF=mdzflolthybnzewhpxno npm run agent-tone:check` / `agent-tone:migrate`. Aplicada no projeto Felipa IA em 02/11/2026. Agentes existentes ficam consultivos, com peso 25 em cada critério (mesmo resultado de antes).
