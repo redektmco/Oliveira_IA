@@ -274,6 +274,36 @@ blockquote{margin:0;font:700 clamp(24px,2.9vw,40px)/1.18 'Bricolage Grotesque',s
   .stage{padding-inline:12px;padding-top:28px}.ans p{padding-right:0}.dk{border-radius:32px}.final{border-radius:32px 32px 0 0}.ocard{border-radius:32px}.ocard::after{border-radius:31px}
   .crmshot{margin-right:-24px;margin-bottom:-24px}
 }
+/* selos sem formato de pílula: viram rótulos de texto */
+.lp .badge,.lp .tag,.lp .step em{background:none;box-shadow:none;padding:0;border-radius:0}
+.lp .badge{font-weight:600;color:var(--mute)}
+.lp .tag{color:#a3a3ab;font-weight:600;letter-spacing:.02em}
+.lp .step em{color:var(--red)}
+.lp .tag::before,.lp .step em::before{content:'— ';opacity:.6}
+
+@media (max-width:600px){
+  .lp{font-size:15px}
+  .nav{top:8px;width:calc(100% - 16px);height:56px;padding:0 8px 0 16px}.nav-logo img{height:28px}.burger{width:40px;height:40px}.burger i{left:11px;right:11px}.burger i:first-child{top:15px}.burger i:last-child{top:23px}.burger[aria-expanded=true] i:first-child,.burger[aria-expanded=true] i:last-child{top:19px}
+  .nav nav{inset:72px 8px auto}
+  .hero{padding:96px 20px 0}.hero-top{gap:28px}.hero h1{font-size:clamp(36px,11.6vw,60px);margin-top:18px}.hl{white-space:normal}
+  .sub{font-size:16px}.btns{flex-direction:column;align-items:stretch}.btns .btn{justify-content:center}
+  .btn{padding:16px 22px;font-size:15px}.btn.big{padding:20px 26px;font-size:17px;width:100%;justify-content:center}
+  .proof{font-size:13px;align-items:flex-start}.avs i{width:34px;height:34px}
+  .stage-wrap{margin-top:36px}.stage{border-radius:28px 28px 0 0;padding:24px 10px 0}.shot{border-radius:14px 14px 0 0}
+  .orb{opacity:.35}.o1{width:300px;height:300px}.o2{width:240px}
+  .band{padding:26px 0}.mi{font-size:18px}.marq-in{gap:40px}
+  .sec{padding:64px 20px}.big{font-size:clamp(32px,9.4vw,46px)}.lead{font-size:16px;margin-top:20px}
+  .stats{grid-template-columns:1fr 1fr}.stat{padding:24px 12px 4px 0}.stat:nth-child(even){padding-left:16px}.val{font-size:clamp(44px,15vw,64px)}.stat b{font-size:14px}.stat small{font-size:12.5px}
+  .dk{margin:0 8px;padding-inline:18px;border-radius:28px}.card{border-radius:24px;padding:22px;min-height:0}.chatcard{min-height:0}.chat{min-height:230px}.bub{max-width:92%;font-size:14px}
+  .crmshot{height:220px;margin-right:-22px;margin-bottom:-22px}.card h3{font-size:24px}
+  .how-pin{padding:64px 20px}.step{width:84vw;min-height:300px;padding:26px;border-radius:24px}.num{font-size:72px}.step h3{font-size:24px}
+  .tcard{border-radius:28px}.portrait{min-height:280px}.tq{padding:24px;gap:20px}blockquote{font-size:22px}.res{text-align:left}.res strong{font-size:44px}.auth{flex-direction:column;align-items:flex-start}
+  .tr{padding:16px 0;font-size:14px}
+  .ocard{padding:26px 22px;gap:28px;border-radius:28px}.ocard::after{border-radius:27px}.oleft h2{font-size:34px}.oleft p{font-size:15px}.olist b{font-size:16px}
+  .q button{padding:22px 0;gap:14px}.pm{width:38px;height:38px}.ans p{font-size:16px}
+  .final{padding:48px 20px 64px;border-radius:28px 28px 0 0}.fh{font-size:clamp(44px,15vw,72px)}.frow{flex-direction:column;align-items:flex-start;gap:24px}.frow .btn{width:100%}
+  .foot{flex-direction:column;align-items:flex-start;padding:36px 20px}.foot nav{gap:16px 24px}
+}
 @media (prefers-reduced-motion:reduce){
   .lp *,.lp *::before,.lp *::after{animation:none!important;transition-duration:.01ms!important;transition-delay:0s!important}
   .rv{opacity:1;transform:none;filter:none}.swi{transform:none}.fw{opacity:1}.chip{opacity:1}.pre{display:none}.nav{opacity:1}.trk i{transform:none}.portrait{clip-path:none}
