@@ -25,7 +25,9 @@
     "opportunities:check": "node --use-env-proxy --import tsx scripts/migrate-opportunities.ts --check",
     "opportunities:migrate": "node --use-env-proxy --import tsx scripts/migrate-opportunities.ts --apply",
     "workflows:check": "node --use-env-proxy --import tsx scripts/migrate-workflows.ts --check",
-    "workflows:migrate": "node --use-env-proxy --import tsx scripts/migrate-workflows.ts --apply"
+    "workflows:migrate": "node --use-env-proxy --import tsx scripts/migrate-workflows.ts --apply",
+    "platform:check": "node --use-env-proxy --import tsx scripts/migrate-platform.ts --check",
+    "platform:migrate": "node --use-env-proxy --import tsx scripts/migrate-platform.ts --apply"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.78.0",

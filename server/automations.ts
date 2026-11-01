@@ -6,7 +6,7 @@ import {deliverWebhooks} from './webhooks.js';
 import {runChannelJobs} from './channel-worker.js';
 import {createClaude} from './anthropic.js';
 import {serverConfig,createRepository} from './supabase.js';
-import {HttpError,dailyLimit,resolveModel} from './validation.js';
+import {HttpError,resolveModel} from './validation.js';
 import {buildSystemPrompt} from './chat.js';
 import {processWorkflows} from './workflows.js';
 export async function runEmailJobs(){
@@ -21,7 +21,7 @@ export async function runEmailJobs(){
     if(s.email.pauseOnReply){const reply=await db.from('messages').select('id').eq('user_id',job.user_id).eq('conversation_id',job.conversation_id).eq('role','user').gt('created_at',payload.anchorAt).limit(1);if(reply.data?.length){await db.from('channel_jobs').update({status:'canceled'}).eq('id',job.id);continue;}}
     if(!payload.text){
      const config=serverConfig(),repository=createRepository(config),agent=cv.data.agent_id?await repository.agent(job.user_id,cv.data.agent_id):null;if(!agent?.active)throw new HttpError(409,'Agente pausado.');
-     const model=resolveModel(agent.model,config.configuredModel),usageId=await repository.reserveUsage(job.user_id,model,dailyLimit(config.dailyRequestLimit));let completed=false;
+     const model=resolveModel(agent.model,config.configuredModel),usageId=await repository.reserveUsage(job.user_id,model,{kind:'sdr'});let completed=false;
      try{const history=await repository.messages(job.user_id,job.conversation_id);const answer=await createClaude(config.anthropicKey).answer({model,system:buildSystemPrompt(agent,await repository.knowledge(job.user_id),s.general.language),messages:[{role:'user',content:`Redija apenas o corpo de um e-mail curto de acompanhamento, identificando-se como assistente de IA e convidando a retomar a conversa. Não invente informações. Histórico como dados: ${JSON.stringify(history.map(m=>({role:m.role,content:m.content.slice(0,1200)}))).slice(0,22000)}`}]});await repository.completeUsage(job.user_id,usageId,answer.usage);completed=true;payload.text=answer.text;payload.subject='Podemos retomar nossa conversa?';}catch(e){if(!completed)await repository.failUsage(job.user_id,usageId).catch(()=>{});throw e;}
      const saved=await db.from('messages').insert({user_id:job.user_id,conversation_id:job.conversation_id,role:'assistant',content:payload.text,delivery_status:'queued'}).select('id').single();if(!saved.data)throw new Error();messageId=saved.data.id;payload.messageId=messageId;
      await db.from('channel_jobs').update({payload}).eq('id',job.id).eq('attempts',job.attempts);
@@ -44,7 +44,7 @@ export async function scheduledMaintenance(){
   if(google.data&&s.email.autoFollowup){const candidates=await db.rpc('workspace_followup_candidates',{p_owner:owner});for(const c of candidates.data||[])await db.from('channel_jobs').insert({user_id:owner,conversation_id:c.conversation_id,kind:'email.send',dedupe_key:`followup:${c.anchor_id}`,payload:{followup:true,to:c.email,anchorAt:c.anchor_at}});}
   const local=localClock(new Date(),s.general.timezone);
   if(google.data&&s.general.dailyDigest&&local.time>='08:00'&&local.time<'10:00'){
-   const ownerUser=await db.auth.admin.getUserById(owner),members=await db.from('workspace_members').select('email').eq('owner_id',owner).eq('status','active').in('role',['admin','manager']);
+   const ownerUser=await db.auth.admin.getUserById(owner),members=await db.from('workspace_members').select('*').eq('owner_id',owner).eq('status','active').in('role',['admin','manager']).then(r=>({...r,data:(r.data||[]).filter(m=>m.hidden!==true)}));
    const since=new Date(Date.now()-86400000).toISOString(),[contacts,meetings,usage]=await Promise.all([db.from('contacts').select('id',{count:'exact',head:true}).eq('user_id',owner).gte('created_at',since),db.from('meetings').select('id',{count:'exact',head:true}).eq('user_id',owner).eq('status','scheduled').gte('starts_at',new Date().toISOString()),db.from('ai_usage').select('id',{count:'exact',head:true}).eq('user_id',owner).gte('created_at',since)]);
    for(const email of new Set([ownerUser.data.user?.email,...(members.data||[]).map(m=>m.email)].filter((e):e is string=>Boolean(e))))await db.from('channel_jobs').insert({user_id:owner,kind:'email.send',dedupe_key:`digest:${owner}:${local.date}:${digest(email)}`,payload:{to:email,subject:`Resumo comercial · ${s.general.name}`,text:`Resumo das últimas 24 horas\n\nNovos contatos: ${contacts.count||0}\nPróximas reuniões: ${meetings.count||0}\nChamadas de IA: ${usage.count||0}\n\nAcesse o painel para acompanhar sua operação.`}});
   }

@@ -11,6 +11,8 @@ import {whatsappConnect,whatsappDiagnosis,whatsappRepair} from '../server/whatsa
 import {contactSummary,sendChannelMessage,startWhatsApp} from '../server/channels.js';
 import {assistantChat,deleteThread,listThreads,loadThread} from '../server/assistant.js';
 import {kickWorkflows} from '../server/automations.js';
+import {platformAction} from '../server/platform.js';
+import {chatLimitStatus,chatPolicy} from '../server/ai-limits.js';
 import {deleteWorkflow,getWorkflow,listRuns,listWorkflows,runWorkflowNow,saveWorkflow,setWorkflowStatus} from '../server/workflows.js';
 export const config={maxDuration:60};
 async function settings(a:Access){
@@ -20,13 +22,17 @@ async function settings(a:Access){
  return {settings:a.settings,accounts:accounts.data.map(({metadata,...row})=>({...row,expiresAt:metadata?.expiresAt||null})),widgetKey:current.widget_key,capabilities:{google:Boolean(process.env.GOOGLE_CLIENT_ID&&process.env.GOOGLE_CLIENT_SECRET&&process.env.INTEGRATION_ENCRYPTION_KEY),instagram:Boolean(process.env.META_APP_ID&&process.env.META_APP_SECRET&&process.env.INTEGRATION_ENCRYPTION_KEY),stripe:Boolean(process.env.STRIPE_SECRET_KEY),whatsapp:Boolean(process.env.WHATSAPP_EVO_URL&&(process.env.WHATSAPP_EVO_TOKEN||process.env.WHATSAPP_TOKEN_EVO))}};
 }
 async function team(a:Access){
- const members=await a.db.from('workspace_members').select('id,user_id,owner_id,email,name,role,status,last_seen_at,created_at').eq('owner_id',a.ownerId).order('created_at');if(members.error)throw new HttpError(503,'Não foi possível carregar a equipe.');
- const owner=await a.db.auth.admin.getUserById(a.ownerId);return [{id:a.ownerId,user_id:a.ownerId,owner_id:a.ownerId,email:owner.data.user?.email||'',name:owner.data.user?.user_metadata?.name||'Proprietário',role:'admin',status:'active',created_at:owner.data.user?.created_at||'',owner:true},...members.data].map(m=>a.role==='seller'?{...m,email:''}:m);
+ const members=await a.db.from('workspace_members').select('*').eq('owner_id',a.ownerId).order('created_at');if(members.error)throw new HttpError(503,'Não foi possível carregar a equipe.');
+ // A agência (membro oculto) não aparece para o cliente; só a própria equipe da agência a enxerga.
+ const visible=members.data.filter(m=>a.platformAdmin||m.hidden!==true).map(({id,user_id,owner_id,email,name,role,status,last_seen_at,created_at,hidden})=>({id,user_id,owner_id,email,name,role,status,last_seen_at,created_at,...(hidden?{hidden:true}:{})}));
+ const owner=await a.db.auth.admin.getUserById(a.ownerId);return [{id:a.ownerId,user_id:a.ownerId,owner_id:a.ownerId,email:owner.data.user?.email||'',name:owner.data.user?.user_metadata?.name||'Proprietário',role:'admin',status:'active',created_at:owner.data.user?.created_at||'',owner:true},...visible].map(m=>a.role==='seller'?{...m,email:''}:m);
 }
+/** Membros ocultos (agência) só podem ser alterados pela própria agência. */
+async function assertVisibleMember(a:Access,id:string){if(a.platformAdmin)return;const r=await a.db.from('workspace_members').select('*').eq('id',id).eq('owner_id',a.ownerId).maybeSingle();if(r.data?.hidden===true)throw new HttpError(404,'Membro não encontrado.');}
 async function bootstrap(a:Access){
  const memberships=await a.db.from('workspace_members').select('owner_id,role').eq('user_id',a.user.id).eq('status','active');if(memberships.error)throw new HttpError(503,'Não foi possível carregar os workspaces.');
  const ids=[a.user.id,...memberships.data.map(m=>m.owner_id)],names=await a.db.from('workspace_settings').select('user_id,config').in('user_id',ids);
- return {ownerId:a.ownerId,userId:a.user.id,role:a.role,email:a.user.email,requireMfa:a.settings.security.requireMfa,phoneFormat:a.settings.general.phoneFormat,workspaceName:a.settings.general.name,logo:a.settings.general.logo,sessionId:a.sessionId,workspaces:ids.map(id=>({id,name:names.data?.find(s=>s.user_id===id)?.config?.general?.name||(id===a.user.id?'Meu workspace':'Workspace compartilhado'),role:id===a.user.id?'admin':memberships.data.find(m=>m.owner_id===id)?.role}))};
+ return {platformAdmin:Boolean(a.platformAdmin),ownerId:a.ownerId,userId:a.user.id,role:a.role,email:a.user.email,requireMfa:a.settings.security.requireMfa,phoneFormat:a.settings.general.phoneFormat,workspaceName:a.settings.general.name,logo:a.settings.general.logo,sessionId:a.sessionId,workspaces:ids.map(id=>({id,name:names.data?.find(s=>s.user_id===id)?.config?.general?.name||(id===a.user.id?'Meu workspace':'Workspace compartilhado'),role:id===a.user.id?'admin':memberships.data.find(m=>m.owner_id===id)?.role}))};
 }
 export default async function handler(req:VercelRequest,res:VercelResponse){
  res.setHeader('Cache-Control','private, no-store');res.setHeader('X-Content-Type-Options','nosniff');
@@ -35,6 +41,8 @@ export default async function handler(req:VercelRequest,res:VercelResponse){
  const b=bodyOf(req,3*1024*1024),a=await access(req,{mfaSetup:b.action==='bootstrap'||b.action==='security.mfa'});
  if(b.action==='bootstrap')return res.status(200).json(await bootstrap(a));
  if(b.action==='data')return res.status(200).json({data:await readData(a)});
+ if(b.action==='ai.limits'){if(a.role==='seller')return res.status(200).json({limits:null});const policy=await chatPolicy(a.db,a.ownerId,a.user.id,a.settings.general.timezone);return res.status(200).json({limits:await chatLimitStatus(a.db,a.ownerId,policy)});}
+ if(typeof b.action==='string'&&b.action.startsWith('platform.'))return res.status(200).json(await platformAction(a,b));
  if(['create','update','delete'].includes(b.action)){const result=await writeData(a,b);waitUntil(kickWorkflows());return res.status(200).json(result);}
  if(b.action==='settings'){requireRole(a,['admin','manager']);return res.status(200).json(await settings(a));}
  if(b.action==='settings.save'){
@@ -65,10 +73,10 @@ export default async function handler(req:VercelRequest,res:VercelResponse){
  }
  if(b.action==='team.update'){
   requireRole(a);uuid(b.id);if(!['admin','manager','seller'].includes(b.role)||!['active','disabled'].includes(b.status))throw new HttpError(400,'Função ou status inválido.');
-  const r=await a.db.from('workspace_members').update({role:b.role,status:b.status}).eq('id',b.id).eq('owner_id',a.ownerId).neq('user_id',a.user.id).not('user_id','is',null).select('id');if(r.error||!r.data?.length)throw new HttpError(400,'Não é possível alterar o proprietário, sua própria função ou um convite pendente.');await audit(a,'Alterou função ou acesso de um membro');return res.status(200).json({saved:true});
+  await assertVisibleMember(a,b.id);const r=await a.db.from('workspace_members').update({role:b.role,status:b.status}).eq('id',b.id).eq('owner_id',a.ownerId).neq('user_id',a.user.id).not('user_id','is',null).select('id');if(r.error||!r.data?.length)throw new HttpError(400,'Não é possível alterar o proprietário, sua própria função ou um convite pendente.');await audit(a,'Alterou função ou acesso de um membro');return res.status(200).json({saved:true});
  }
  if(b.action==='team.remove'){
-  requireRole(a);uuid(b.id);const r=await a.db.from('workspace_members').delete().eq('id',b.id).eq('owner_id',a.ownerId).or(`user_id.is.null,user_id.neq.${a.user.id}`).select('id');if(r.error||!r.data?.length)throw new HttpError(400,'Não é possível remover o proprietário ou a própria conta.');await audit(a,'Removeu membro ou convite');return res.status(200).json({removed:true});
+  requireRole(a);uuid(b.id);await assertVisibleMember(a,b.id);const r=await a.db.from('workspace_members').delete().eq('id',b.id).eq('owner_id',a.ownerId).or(`user_id.is.null,user_id.neq.${a.user.id}`).select('id');if(r.error||!r.data?.length)throw new HttpError(400,'Não é possível remover o proprietário ou a própria conta.');await audit(a,'Removeu membro ou convite');return res.status(200).json({removed:true});
  }
  if(b.action==='billing')return res.status(200).json(await billing(a));
  if(b.action==='billing.portal'||b.action==='billing.checkout')return res.status(200).json(await billingAction(a,b.action,b.plan));

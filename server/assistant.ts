@@ -4,7 +4,8 @@ import type {AssistantCard} from '../src/lib/types.js';
 import {audit,contactAccess,uuid,type Access} from './access.js';
 import {startWhatsApp} from './channels.js';
 import {createRepository,serverConfig} from './supabase.js';
-import {dailyLimit,HttpError,MAX_MESSAGE_CHARACTERS,resolveModel} from './validation.js';
+import {HttpError,MAX_MESSAGE_CHARACTERS,resolveModel} from './validation.js';
+import {chatLimitStatus,chatPolicy} from './ai-limits.js';
 import {dealAccess,writeData} from './workspace-data.js';
 import {getWorkflow,listRuns,listWorkflows,runWorkflowNow,saveWorkflow,setWorkflowStatus,summarizeWorkflow} from './workflows.js';
 import {describeTrigger} from '../src/lib/workflow-types.js';
@@ -521,7 +522,8 @@ export async function assistantChat(a:Access,b:Record<string,any>,model?:Assista
  if(b.threadId){uuid(b.threadId);threadId=b.threadId as string;}
  const config=serverConfig(),repository=createRepository(config),modelName=resolveModel(null,config.configuredModel);
  const history=threadId?(await loadThread(a,threadId),await threadHistory(a,threadId)):validateHistory(b.history);
- const usageId=await repository.reserveUsage(a.ownerId,modelName,dailyLimit(config.dailyRequestLimit));
+ const policy=await chatPolicy(a.db,a.ownerId,a.user.id,a.settings.general.timezone);
+ const usageId=await repository.reserveUsage(a.ownerId,modelName,policy);
  let answer:Awaited<ReturnType<typeof runAssistant>>;
  try{
   answer=await runAssistant(a,{message,threadId,history},{model:model??createAssistantModel(config.anthropicKey),modelName});
@@ -530,5 +532,6 @@ export async function assistantChat(a:Access,b:Record<string,any>,model?:Assista
  let saved:{threadId:string|null;title:string|null}={threadId,title:null};
  try{saved=await saveTurn(a,threadId,message,{role:'assistant',content:answer.text,actions:answer.actions});}
  catch{saved={threadId:null,title:null};}
- return {threadId:saved.threadId,title:saved.title,persisted:Boolean(saved.threadId),text:answer.text,actions:answer.actions,usage:answer.usage};
+ const limits=await chatLimitStatus(a.db,a.ownerId,policy).catch(()=>null);
+ return {threadId:saved.threadId,title:saved.title,persisted:Boolean(saved.threadId),text:answer.text,actions:answer.actions,usage:answer.usage,limits};
 }

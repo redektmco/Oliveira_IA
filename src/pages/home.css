@@ -129,3 +129,5 @@
   .home-composer-note { display: none; }
   .home-composer-bar { justify-content: flex-end; }
 }
+.home-usage { display: flex; justify-content: flex-start; margin: var(--sp-2) var(--sp-1) 0; }
+.home-dock .home-usage { justify-content: center; }

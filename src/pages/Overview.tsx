@@ -3,9 +3,10 @@ import { Icon, type IconName } from '../components/ui';
 import { useWorkspace } from '../lib/workspace';
 import type { AssistantCard, AssistantMessage, AssistantThread } from '../lib/types';
 import { useTheme } from '../lib/theme';
+import { UsageInline, notifyUsage, type ChatLimits } from '../components/UsageMeter';
 import './home.css';
 
-type Reply = { threadId: string | null; title: string | null; persisted: boolean; text: string; actions: AssistantCard[] };
+type Reply = { threadId: string | null; title: string | null; persisted: boolean; text: string; actions: AssistantCard[]; limits?: ChatLimits | null };
 
 const TZ = 'America/Sao_Paulo';
 
@@ -127,8 +128,10 @@ export default function Overview({ go, userName }: { go?: (page: string) => void
         else setThreads(previous => { const hit = previous.find(item => item.id === reply.threadId); return hit ? [{ ...hit, updated_at: new Date().toISOString() }, ...previous.filter(item => item.id !== hit.id)] : previous; });
       }
       if (reply.actions.some(action => action.ok && action.kind !== 'read')) void refresh(true).catch(() => undefined);
+      notifyUsage(reply.limits);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Não foi possível falar com o assistente. Tente novamente.');
+      notifyUsage();
     } finally { setPending(false); }
   }
 
@@ -187,7 +190,7 @@ export default function Overview({ go, userName }: { go?: (page: string) => void
       <div className="home-eyebrow"><i aria-hidden="true" />{eyebrow}</div>
       <h1 className="home-title">{greeting()}{name ? `, ${name}` : ''}.<span>O que vamos fazer em {workspaceName}?</span></h1>
       {composer}
-      {blocked && <p className="home-hint">{blocked}</p>}
+      {blocked ? <p className="home-hint">{blocked}</p> : <div className="home-usage"><UsageInline /></div>}
       <div className="home-chips" aria-label="Sugestões">{suggestions.map(item => <button key={item.label} type="button" onClick={() => choose(item)} disabled={Boolean(blocked)}><Icon name={item.icon} size={13} />{item.label}</button>)}</div>
     </div> : <>
       <div className="home-thread" role="log" aria-live="polite" aria-busy={pending}>
@@ -216,6 +219,7 @@ export default function Overview({ go, userName }: { go?: (page: string) => void
       <div className="home-dock">
         <div className="home-dock-inner">
           {composer}
+          <div className="home-usage"><UsageInline /></div>
           <p className="home-foot">{historyOn && !saved ? 'Esta conversa não está sendo salva: aplique a migração do histórico no Supabase. ' : ''}A IA pode errar; confira as ações executadas antes de seguir.</p>
         </div>
       </div>

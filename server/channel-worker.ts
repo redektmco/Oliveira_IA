@@ -3,7 +3,7 @@ import {mergeSettings} from '../src/lib/settings-types.js';
 import {createRepository,serverConfig} from './supabase.js';
 import {createClaude} from './anthropic.js';
 import {buildMessages,buildSystemPrompt} from './chat.js';
-import {dailyLimit,HttpError,resolveModel} from './validation.js';
+import {HttpError,resolveModel} from './validation.js';
 import {instagramSend,providerFetch} from './providers.js';
 const handoff=/(?:falar|conversar|atendimento).{0,30}(?:humano|pessoa|atendente|vendedor)|(?:quero|preciso).{0,20}(?:humano|atendente)/i;
 export async function replyToChannel(owner:string,conversationId:string){
@@ -13,7 +13,7 @@ export async function replyToChannel(owner:string,conversationId:string){
  const history=await repository.messages(owner,conversationId),last=history[history.length-1];if(last?.role!=='user')return null;
  if(handoff.test(last.content)){await db.from('conversations').update({status:'human'}).eq('id',conversationId).eq('user_id',owner);return null;}
  if(cv.channel==='instagram'&&!s.instagram.directMessages)return null;
- const model=resolveModel(agent.model,config.configuredModel),usageId=await repository.reserveUsage(owner,model,dailyLimit(config.dailyRequestLimit));let completed=false;
+ const model=resolveModel(agent.model,config.configuredModel),usageId=await repository.reserveUsage(owner,model,{kind:'sdr'});let completed=false;
  try{
  const language=s.general.language==='en'?'Respond in English.':s.general.language==='es'?'Responde en español.':'Responda em português do Brasil.';
  const answer=await createClaude(config.anthropicKey).answer({model,system:`${buildSystemPrompt(agent,await repository.knowledge(owner))}\n\nIdioma configurado pelo responsável: ${language}`,messages:buildMessages(history.slice(0,-1).map(m=>({role:m.role==='user'?'user' as const:'assistant' as const,content:m.content})),last.content)});

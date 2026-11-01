@@ -114,7 +114,8 @@ export default function Auth({ onDemo, recovery = false }: { onDemo: () => void;
         <button className="btn btn-primary auth-submit" disabled={pending}>{pending ? 'Aguarde…' : mode === 'signup' ? 'Criar conta' : mode === 'reset' ? 'Enviar link' : mode === 'password' ? 'Salvar nova senha' : 'Entrar'}</button>
       </form>}
       {supabase && mode === 'login' && <button type="button" className="btn auth-submit" disabled={pending} onClick={() => void google()}>Entrar com Google</button>}
-      {supabase && mode !== 'password' && <div className="auth-links"><button type="button" onClick={() => switchMode(mode === 'login' ? 'signup' : 'login')}>{mode === 'login' ? 'Criar conta' : 'Voltar para entrar'}</button>{mode === 'login' && <button type="button" onClick={() => switchMode('reset')}>Esqueci minha senha</button>}</div>}
+      {/* Cadastro público fechado: as contas são criadas pela agência (Clientes da agência). */}
+      {supabase && mode !== 'password' && <div className="auth-links">{mode === 'login' ? <><span className="auth-caption" style={{margin:0,textAlign:'left'}}>Sem acesso? Peça à agência.</span><button type="button" onClick={() => switchMode('reset')}>Esqueci minha senha</button></> : <button type="button" onClick={() => switchMode('login')}>Voltar para entrar</button>}</div>}
       {mode !== 'password' && <><div className="auth-divider"><span>conheça a plataforma</span></div><button type="button" className="btn auth-submit" onClick={onDemo}>Explorar demonstração</button><small className="auth-caption">Dados fictícios, salvos apenas neste navegador. A demonstração não consome créditos de IA.</small></>}
     </div></section></div>;
 }

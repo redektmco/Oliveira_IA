@@ -20,7 +20,7 @@ export type Knowledge = { id: string; title: string; content: string; created_at
 export type Conversation = { id: string; contact_id: string | null; agent_id: string | null; channel: 'web' | 'whatsapp' | 'email' | 'instagram' | 'widget'; external_id?: string | null; status: 'ai' | 'human' | 'closed'; created_at: string };
 export type Message = { id: string; conversation_id: string; role: 'user' | 'assistant' | 'human'; content: string; delivery_status?: string; created_at: string };
 export type Meeting = { id: string; contact_id: string | null; title: string; starts_at: string; duration: number; location: string; status: 'scheduled' | 'completed' | 'cancelled'; created_at: string; source?: 'manual' | 'ai'; assigned_to?: string | null; calendar_event_id?: string };
-export type Usage = { id: string; model: string; input_tokens: number; output_tokens: number; status: 'pending' | 'completed' | 'failed'; created_at: string };
+export type Usage = { id: string; model: string; input_tokens: number; output_tokens: number; status: 'pending' | 'completed' | 'failed'; created_at: string; kind?: 'chat' | 'sdr' | 'automation' | 'summary'; actor_id?: string | null };
 export type ContactNote = {id:string;contact_id:string;content:string;author?:string;created_at:string};
 export type ContactFile = {id:string;contact_id:string;name:string;mime:string;bytes:number;storage_path:string;created_at:string};
 /** Card de ação que o assistente de IA executou (ou tentou executar) na tela inicial. */

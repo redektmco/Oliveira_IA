@@ -33,14 +33,19 @@ export function ipAllowed(ip:string,rules:string[]){if(!rules.length)return true
  const toNum=(s:string)=>s.split('.').reduce((n,p)=>(n<<8)|Number(p),0)>>>0,mask=count===0?0:(0xffffffff<<(32-count))>>>0;
  return (toNum(network)&mask)===(toNum(ip)&mask);
 });}
-export type Access={db:SupabaseClient;user:User;ownerId:string;role:WorkspaceRole;settings:WorkspaceSettings;sessionId:string;token:string;ip:string};
+export type Access={db:SupabaseClient;user:User;ownerId:string;role:WorkspaceRole;settings:WorkspaceSettings;sessionId:string;token:string;ip:string;platformAdmin?:boolean};
+/** Equipe da agência: e-mails confirmados listados em PLATFORM_ADMIN_EMAILS (separados por vírgula), somente no servidor. */
+export function isPlatformAdmin(user:Pick<User,'email'|'email_confirmed_at'>,env:Record<string,string|undefined>=process.env){
+ const email=user.email?.trim().toLowerCase();if(!email||!user.email_confirmed_at)return false;
+ return (env.PLATFORM_ADMIN_EMAILS||'').split(/[,;\s]+/).map(e=>e.trim().toLowerCase()).filter(Boolean).includes(email);
+}
 export async function access(req:VercelRequest,options:{mfaSetup?:boolean}={}):Promise<Access>{
  const token=parseBearerToken(req.headers.authorization),db=adminDb();
  const result=await db.auth.getUser(token);if(result.error||!result.data.user)throw new HttpError(401,'Sua sessão expirou. Entre novamente.');const user=result.data.user;
  const requested=req.headers['x-workspace-id'];if(requested!==undefined)uuid(requested);
  const ownerId=typeof requested==='string'?requested:user.id;
  let role:WorkspaceRole='admin';
- if(ownerId!==user.id){const m=await db.from('workspace_members').select('role').eq('owner_id',ownerId).eq('user_id',user.id).eq('status','active').maybeSingle();if(m.error||!m.data)throw new HttpError(403,'Você não tem acesso a este workspace.');role=m.data.role;}
+ if(ownerId!==user.id){const m=await db.from('workspace_members').select('*').eq('owner_id',ownerId).eq('user_id',user.id).eq('status','active').maybeSingle();if(m.error||!m.data||(m.data.hidden===true&&!isPlatformAdmin(user)))throw new HttpError(403,'Você não tem acesso a este workspace.');role=m.data.role;}
  const config=await db.from('workspace_settings').select('config').eq('user_id',ownerId).maybeSingle();
  if(config.error)throw new HttpError(503,'Aplique a migração de configurações e equipe no Supabase.');
  const settings=mergeSettings(config.data?.config);
@@ -54,10 +59,10 @@ export async function access(req:VercelRequest,options:{mfaSetup?:boolean}={}):P
  if(existing.data?.revoked_at||!Number.isFinite(lastSeen)||Date.now()-lastSeen>settings.security.sessionDays*86400000)throw new HttpError(401,'Esta sessão foi encerrada ou expirou por inatividade. Entre novamente.');
  const device=String(req.headers['user-agent']||'Navegador').slice(0,300);
  const session=await db.from('workspace_sessions').upsert({id:sessionId,user_id:user.id,ip,device,last_seen_at:new Date().toISOString()},{onConflict:'id'});if(session.error)throw new HttpError(503,'Não foi possível registrar a sessão.');
- return {db,user,ownerId,role,settings,sessionId,token,ip};
+ return {db,user,ownerId,role,settings,sessionId,token,ip,platformAdmin:isPlatformAdmin(user)};
 }
 export function requireRole(a:Access,roles:WorkspaceRole[]=['admin']){if(!roles.includes(a.role))throw new HttpError(403,'Sua função não permite esta operação.');}
-export async function audit(a:Access,action:string){const r=await a.db.from('workspace_audit').insert({user_id:a.ownerId,actor_id:a.user.id,actor_email:a.user.email||'',action});if(r.error)throw new HttpError(503,'Não foi possível registrar a operação na auditoria.');}
+export async function audit(a:Access,action:string){const r=await a.db.from('workspace_audit').insert({user_id:a.ownerId,actor_id:a.user.id,actor_email:a.platformAdmin&&a.ownerId!==a.user.id?'Agência':a.user.email||'',action});if(r.error)throw new HttpError(503,'Não foi possível registrar a operação na auditoria.');}
 export async function contactAccess(a:Access,id:string){uuid(id);const q=a.db.from('contacts').select('*').eq('id',id).eq('user_id',a.ownerId);if(a.role==='seller')q.eq('assigned_to',a.user.id);const r=await q.maybeSingle();if(r.error||!r.data)throw new HttpError(404,'Contato não encontrado ou sem acesso.');return r.data;}
 export function maskedContact(contact:Record<string,any>){return {...contact,email:contact.email?`${contact.email.slice(0,2)}•••@•••`:'',phone:contact.phone?`•••• ${contact.phone.slice(-4)}`:''};}
 export function safeError(error:unknown){return error instanceof HttpError?{status:error.status,error:error.message}:{status:500,error:'Não foi possível concluir a operação. Tente novamente.'};}

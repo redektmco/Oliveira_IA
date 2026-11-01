@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { UsageInline, notifyUsage } from '../components/UsageMeter';
 import { useWorkspace } from '../lib/workspace';
 import './ai.css';
 
@@ -52,6 +53,7 @@ export default function Playground() {
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Não foi possível consultar o Claude. Tente novamente.');
     } finally {
+      notifyUsage();
       setPending('');
     }
   }
@@ -77,7 +79,7 @@ export default function Playground() {
         <form className="ai-chat-composer" onSubmit={send}>
           {error && <div className="ai-alert" role="alert">{error}</div>}
           <label className="ai-field"><span className="ai-sr-only">Mensagem de teste</span><textarea maxLength={4000} rows={3} value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="Ex.: Tenho uma equipe de 6 vendedores e quero melhorar o atendimento…" disabled={Boolean(pending) || !agent} /></label>
-          <div className="ai-actions"><small className="ai-muted">{draft.length}/4.000 caracteres</small><button className="btn btn-primary" disabled={Boolean(pending) || !draft.trim() || !agent || demo}>{pending ? 'Enviando…' : 'Enviar ao Claude'}</button></div>
+          <div className="ai-actions"><small className="ai-muted">{draft.length}/4.000 caracteres</small><UsageInline /><button className="btn btn-primary" disabled={Boolean(pending) || !draft.trim() || !agent || demo}>{pending ? 'Enviando…' : 'Enviar ao Claude'}</button></div>
         </form>
       </section>
     </div>
