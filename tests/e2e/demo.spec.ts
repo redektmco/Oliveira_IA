@@ -34,7 +34,7 @@ test.describe('demonstração guiada (/demo)', () => {
     await expect(page.locator('.dm-hot')).toHaveCount(1);
     await page.locator('.dm-hot').click();
     await expect(page).toHaveURL(/#3\.2$/);
-    await expect(page.getByText('1ª resposta em 8s')).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Histórico da conversa' }).getByText(/Aqui é a Felipa/)).toBeVisible();
   });
 
   test('painel da apresentadora controla a tela do cliente e mostra as anotações', async ({ context }) => {

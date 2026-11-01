@@ -31,13 +31,13 @@ Em alguns passos há um **elemento destacado** (anel vermelho pulsando com rótu
 | --- | --- | --- | --- |
 | 1 | Abertura | 1 | Capa com o nome do cliente |
 | 2 | O problema | 3 | Fila de leads sem resposta, esfriando, e os 4 números da LP |
-| 3 | A IA atende | 5 | Caixa de entrada: lead às 02:14, resposta em 8 s, ficha se preenchendo, score 92, reunião marcada |
-| 4 | Ficha do cliente | 3 | Resumo factual, critérios com evidência, linha do tempo e tarefas |
-| 5 | Agenda sozinha | 2 | Reunião marcada pela IA, Meet, convite e lembrete |
+| 3 | A IA atende | 5 | Caixa de entrada real: lead às 02:14, a Felipa responde, qualifica e marca a reunião |
+| 4 | Ficha do cliente | 3 | Resumo da IA, próxima ação, score com evidência e atividade |
+| 5 | Agenda sozinha | 2 | Reunião marcada pela IA e editável (mesmas telas do app) |
 | 6 | Funil de oportunidades | 4 | Cartão entra, é qualificado e avança; previsão ponderada sobe |
 | 7 | Assistente de IA | 3 | Resumo do dia e execução de pedidos (WhatsApp + reunião) |
-| 8 | Você no controle | 4 | Tom de voz e critérios, base de conhecimento, IA que não inventa, humano assume |
-| 9 | Conectado ao que você usa | 2 | Canais e segurança |
+| 8 | Você no controle | 4 | Editor do agente, base de conhecimento e humano assume a conversa |
+| 9 | Conectado ao que você usa | 2 | Slide de canais e segurança (não é tela do app) |
 | 10 | Resultados | 2 | Números e comparativo SDR tradicional x SDR AI |
 | 11 | Próximos passos | 3 | 7 dias, oferta e fechamento |
 
@@ -52,3 +52,7 @@ Em alguns passos há um **elemento destacado** (anel vermelho pulsando com rótu
 - Os números de resultado (8 s, 24/7, 3x, -70%) e o comparativo são os da landing page. Resultados dependem da operação de cada cliente.
 - A tela de integrações lista os mesmos canais da LP (WhatsApp, Instagram, Gmail, Google Agenda, Meta Ads, API e Webhooks). Confirme quais estão ativos no contrato do cliente antes de prometer.
 - Nada na demo prova uma conexão real: para mostrar o produto de verdade, entre em `/app` com uma conta configurada.
+
+## Fidelidade ao produto
+
+As telas de Caixa de entrada, Contatos (ficha), Reuniões, Oportunidades, Assistente, Agentes e Base de conhecimento reproduzem a estrutura das telas reais, com os mesmos textos e componentes. Só os dados são fictícios e as respostas da IA são roteirizadas. O capítulo de canais e segurança, a abertura, o problema, os resultados e o fechamento são slides, não telas do app. Se uma tela do app mudar, atualize a cena correspondente em `src/demo/`.

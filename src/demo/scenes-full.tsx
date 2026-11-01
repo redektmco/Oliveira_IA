@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react';
-import { Count, DIcon, initials } from './ui';
+import { Count, DIcon, initials, type DName } from './ui';
 
 type Props = { step: number; company: string; go: () => void };
 
@@ -158,5 +158,28 @@ export function Closing({ step, company }: Props) {
         {offer.map(([title, detail], index) => <li key={title} style={{ '--i': index } as CSSProperties}><span className="dm-ck"><DIcon name="check" size={16} /></span><div><b>{title}</b><small>{detail}</small></div></li>)}
       </ul>
     </div>}
+  </section>;
+}
+
+/* ============ Canais e segurança (slide, não é tela do app) ============ */
+const channels: [string, string, DName][] = [
+  ['WhatsApp', 'Mesmo número que você já usa. A IA responde no mesmo canal.', 'whatsapp'], ['Instagram', 'Mensagens diretas e leads de anúncios na mesma caixa.', 'instagram'],
+  ['Gmail', 'E-mails de interessados e convites enviados pela plataforma.', 'mail'], ['Google Agenda', 'Horários livres do time e reuniões com link do Meet.', 'calendar'],
+  ['Meta Ads', 'Leads de campanhas entrando direto no funil.', 'megaphone'], ['API e Webhooks', 'Integre seu CRM, ERP ou qualquer sistema.', 'webhook'],
+];
+const secure: [DName, string, string][] = [
+  ['lock', 'Dados isolados por conta', 'Cada empresa enxerga só os próprios dados, com regras de acesso no banco.'], ['shield', 'LGPD e privacidade', 'Tratamento de dados seguindo a LGPD. Conversas não são compartilhadas entre clientes.'],
+  ['team', 'Equipe com funções', 'Administrador, gestor e vendedor, cada um com o acesso que precisa.'], ['user', 'Login seguro com MFA', 'Autenticação em duas etapas e controle de sessões ativas.'],
+];
+export function Channels({ step }: Props) {
+  const items = step === 0 ? channels : secure;
+  return <section className="dm-full dm-dark dm-results" aria-label="Canais e segurança">
+    <div className="dm-dglow" />
+    <div className="dm-results-inner" key={step}>
+      <span className="dm-label">{step === 0 ? '(02) Canais' : '(03) Segurança'}</span>
+      <h2 className="dm-big dm-swap">{step === 0 ? 'Conectado ao que você já usa.' : 'Seguro por padrão.'}</h2>
+      <div className="dm-chan">{items.map(([title, text, icon], index) => <div className="dm-chan-card" key={title as string} style={{ '--i': index } as CSSProperties}>
+        <span className="dm-ck"><DIcon name={(step === 0 ? icon : title === items[0][0] ? icon : icon) as DName} size={20} /></span><b>{step === 0 ? title : title}</b><small>{text}</small></div>)}</div>
+    </div>
   </section>;
 }

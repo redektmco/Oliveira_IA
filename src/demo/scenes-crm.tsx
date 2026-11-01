@@ -1,56 +1,84 @@
 import { useEffect, useMemo, type CSSProperties } from 'react';
 import { stageProbability, stages, type DealStage } from '../lib/types';
-import { Avatar } from '../components/ui';
 import { brl, Count, DIcon, Hot, meetingDay, monthShort, weekdayShort, Words } from './ui';
 import type { SceneProps } from './scenes-inbox';
 
 const s = (i: number): CSSProperties => ({ '--i': i } as CSSProperties);
 
-/* ============ Ficha do cliente ============ */
+/* ============ Ficha do cliente (mesma estrutura de src/pages/ContactProfile.tsx) ============ */
+const stageList: DealStage[] = ['new', 'qualifying', 'qualified', 'meeting', 'proposal', 'won'];
 export function ProfileScene({ step, company }: SceneProps) {
   const day = useMemo(meetingDay, []);
-  const summary = `Beatriz quer fazer uma avaliação de harmonização facial antes do casamento da irmã, em dezembro. Tem até R$ 4 mil de orçamento e decide sozinha. Chegou pelo Instagram Ads às 02:14, foi atendida pela Felipa em 8 segundos e aceitou a avaliação com a Dra. Helena ${weekdayShort(day)} às 14:30.`;
-  const evidence = [
-    ['Orçamento', 70, '“Até uns R$ 4 mil.”', '02:16'], ['Necessidade', 90, '“Vocês fazem avaliação de harmonização facial?”', '02:14'],
-    ['Autoridade', 95, '“Decido sozinha, não preciso consultar ninguém.”', '02:16'], ['Prazo', 80, '“É para o casamento da minha irmã em dezembro.”', '02:15'],
+  const summary = `Beatriz quer fazer uma avaliação de harmonização facial antes do casamento da irmã, em dezembro. Tem até R$ 4 mil de orçamento e decide sozinha. Chegou pelo Instagram Ads às 02:14, foi atendida pela Felipa e aceitou a avaliação com a Dra. Helena ${weekdayShort(day)} às 14:30.`;
+  const criteria = [
+    ['Orçamento', 70, 'Disse “até uns R$ 4 mil”.'], ['Necessidade', 90, 'Pediu avaliação de harmonização facial.'],
+    ['Autoridade', 95, 'Disse “decido sozinha, não preciso consultar ninguém”.'], ['Prazo', 80, 'Precisa para o casamento da irmã, em dezembro.'],
   ] as const;
-  const timeline = [
-    ['bolt', 'Lead chegou pelo Instagram Ads', '02:14'], ['spark', 'Felipa respondeu em 8 segundos', '02:14'], ['target', 'Qualificação concluída · score 92', '02:16'],
-    ['pipeline', 'Oportunidade criada · R$ 4.000', '02:16'], ['calendar', `Reunião agendada · ${weekdayShort(day)} 14:30 com a Dra. Helena`, '02:17'], ['check', 'Tarefa criada: preparar plano personalizado', '02:18'],
-  ] as const;
+  const stamp = (t: string) => `${new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}, ${t}`;
   useEffect(() => {
-    const timer = window.setTimeout(() => window.scrollTo({ top: step >= 2 ? document.documentElement.scrollHeight : 0, behavior: 'smooth' }), step >= 2 ? 1000 : 60);
+    const timer = window.setTimeout(() => window.scrollTo({ top: step >= 2 ? document.documentElement.scrollHeight : 0, behavior: 'smooth' }), step >= 2 ? 900 : 60);
     return () => window.clearTimeout(timer);
   }, [step]);
-  return <div className="dm-page dm-profile" data-step={step}>
-    <div className="page-header"><div><div className="dm-crumb"><DIcon name="chevronLeft" size={14} /> Contatos</div>
-      <h1 className="page-title dm-title-row"><Avatar name="Beatriz Nogueira" tone="tone-0" /> Beatriz Nogueira <span className="badge badge-success">Qualificado</span><span className="badge badge-danger">🔥 Score 92</span></h1>
-      <p className="page-description">{company} · Instagram Ads · criada automaticamente às 02:14</p></div>
-      <div className="page-actions"><button className="btn" tabIndex={-1}><DIcon name="whatsapp" size={15} /> WhatsApp</button><button className="btn btn-primary" tabIndex={-1}><DIcon name="calendar" size={15} /> Ver reunião</button></div></div>
-    <div className="dm-profile-grid">
-      <div className="dm-col">
-        <div className="card dm-summary dm-rise-in"><div className="dm-card-head"><span className="dm-ic red"><DIcon name="spark" size={16} /></span><b>Resumo da Felipa</b><span className="badge badge-brand">Factual · só o que o cliente disse</span></div>
-          <p key="sum"><Words text={summary} step={22} /></p>
-          <div className="dm-nextact"><DIcon name="bolt" size={15} /><span><b>Próxima ação</b> Confirmar presença na véspera (automático) e levar o plano personalizado para a reunião.</span></div></div>
-        {step >= 1 && <div className="card dm-evidence dm-rise-in" key="ev"><div className="dm-card-head"><span className="dm-ic ink"><DIcon name="target" size={16} /></span><b>Critérios de qualificação</b><span className="badge badge-neutral">Cada nota com evidência</span></div>
-          <div className="dm-evidence-grid">{evidence.map(([label, value, quote, time], index) => <div className="dm-ev" key={label} style={s(index)}>
-            <div className="dm-ev-top"><span>{label}</span><b>{value}%</b></div><div className="score-track"><i style={{ width: `${value}%`, animationDelay: `${index * 140 + 200}ms` }} /></div>
-            <blockquote><DIcon name="message" size={12} /> {quote}<small>Mensagem das {time}</small></blockquote></div>)}</div></div>}
-        {step >= 2 && <div className="card dm-tasks dm-rise-in" key="tk"><div className="dm-card-head"><span className="dm-ic green"><DIcon name="check" size={16} /></span><b>Tarefas</b><span className="badge badge-neutral">2 abertas</span></div>
-          {[['Preparar plano personalizado para a avaliação', 'Dra. Helena', `${weekdayShort(day)}, antes das 14:30`], ['Confirmar presença com a Beatriz', 'Automático · Felipa', 'Véspera, 18:00']].map(([title, who, due], index) => <div className="dm-task" key={title} style={s(index)}><span className="dm-box" /><div><b>{title}</b><small>{who} · {due}</small></div></div>)}</div>}
+  return <div className="content client-profile dm-profile" data-step={step}>
+    <a className="profile-back" href="#contacts" tabIndex={-1}>← Voltar para contatos</a>
+    <header className="profile-header">
+      <div className="profile-identity"><div className="profile-avatar">BN</div><div>
+        <div className="profile-title"><h1>Beatriz Nogueira</h1><span className="badge badge-brand">Qualificado</span><span className="badge badge-success"><DIcon name="spark" size={13} />SDR IA ativa</span></div>
+        <div className="profile-meta"><span><DIcon name="building" size={14} />{company}</span><span>+55 11 9 •••• 4821</span><span>Lead desde {new Date().toLocaleDateString('pt-BR')}</span></div></div></div>
+      <div className="profile-actions"><button className="btn" tabIndex={-1}>Pausar IA</button><button className="btn" tabIndex={-1}><DIcon name="calendar" size={15} />Agendar reunião</button><button className="btn btn-primary" tabIndex={-1}><DIcon name="message" size={15} />Assumir conversa</button></div>
+    </header>
+    <ol className="profile-pipeline" aria-label="Etapa comercial">
+      {stageList.map((stage, index) => <li key={stage} className={stage === 'meeting' ? 'current' : index < 3 ? 'complete' : ''}>
+        <span className="step-dot">{index < 3 ? '✓' : index + 1}</span><div><b>{stages[stage]}</b><small>{stage === 'meeting' ? 'Etapa atual' : '—'}</small></div></li>)}
+    </ol>
+    <div className="profile-columns">
+      <div className="profile-main">
+        <section className="card profile-summary dm-rise-in">
+          <div className="profile-section-head"><h2><span className="profile-ai-icon"><DIcon name="spark" size={17} /></span>Resumo da IA</h2><button className="profile-link" tabIndex={-1}>Atualizar resumo</button><small>Atualizado agora</small></div>
+          <p><Words text={summary} step={22} /></p>
+          <small className="crm-note">8 mensagens no histórico · análise do contexto recente e resumo anterior</small>
+          <div className="profile-next"><div><span className="eyebrow">PRÓXIMA AÇÃO SUGERIDA</span><p>Levar o plano personalizado para a reunião de {weekdayShort(day)} às 14:30 com a Dra. Helena.</p></div>
+            <button className="btn" tabIndex={-1}>Adicionar às notas</button><button className="btn" tabIndex={-1}>Editar</button><button className="btn btn-primary" tabIndex={-1}>Revisar e enviar</button></div>
+        </section>
+        {step >= 2 && <section className="card profile-history dm-rise-in" key="hist">
+          <div className="profile-tabs" role="tablist">{['Atividade', 'Conversa', 'Notas', 'Reuniões', 'Arquivos'].map((t, k) => <button key={t} role="tab" aria-selected={k === 0} tabIndex={-1}>{t}{t === 'Conversa' && <span>8</span>}{t === 'Reuniões' && <span>1</span>}</button>)}</div>
+          <div className="profile-timeline">
+            {[
+              ['target', true, 'Triagem automática atualizada', 'Qualificado · Score 92/100', ''],
+              ['spark', true, 'SDR IA respondeu', 'Combinado! Reunião confirmada. Enviei o convite com o link do Meet para o seu e-mail.', stamp('02:17')],
+              ['message', false, 'Beatriz Nogueira enviou uma mensagem', `${weekdayShort(day).charAt(0).toUpperCase() + weekdayShort(day).slice(1)} às 14:30 😍`, stamp('02:17')],
+              ['message', false, 'Beatriz Nogueira enviou uma mensagem', 'Oi! Vi o anúncio de vocês no Instagram. Vocês fazem avaliação de harmonização facial?', stamp('02:14')],
+              ['users', false, 'Lead criado', 'Origem: Instagram Ads', ''],
+            ].map(([icon, ai, title, text, time], index) => <article key={`${title}${index}`} style={{ animation: `dmIn .5s var(--ease) ${index * 120 + 100}ms both` }}>
+              <span className={`timeline-icon ${ai ? 'ai' : ''}`}><DIcon name={icon as 'target'} size={15} /></span>
+              <div><div className="profile-section-head"><b>{title}</b>{time && <time>{time}</time>}</div><p>{text}</p></div></article>)}
+          </div>
+        </section>}
       </div>
-      <aside className="dm-col">
-        <div className="card dm-details"><div className="dm-card-head"><b>Detalhes</b></div>
-          <dl>{[['Telefone', '+55 11 9•••• 4821'], ['E-mail', 'bea•••@email.com'], ['Origem', 'Instagram Ads'], ['Interesse', 'Harmonização facial'], ['Responsável', 'Dra. Helena (consultora)'], ['Etiquetas', 'Quente · Casamento']].map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}</dl></div>
-        <div className="card dm-timeline"><div className="dm-card-head"><b>Linha do tempo</b><span className="badge badge-brand">Automática</span></div>
-          <ol>{timeline.map(([icon, text, time], index) => <li key={text} style={{ ...s(index), animationDelay: `${(step === 2 ? 150 : 0) + index * 120}ms` } as CSSProperties} className={step >= 2 || index < 2 ? 'dm-tl-in' : 'dm-tl-off'}>
-            <span className="dm-ic ink"><DIcon name={icon} size={14} /></span><div><b>{text}</b><small>{time}</small></div></li>)}</ol></div>
+      <aside className="profile-details" aria-label="Dados e qualificação">
+        {step >= 1 && <section className="card profile-score-card dm-rise-in" key="score">
+          <div className="profile-section-head"><h2>SCORE DE QUALIFICAÇÃO</h2><button className="profile-link" tabIndex={-1}>Ver critérios</button></div>
+          <div className="profile-score"><strong><Count to={92} ms={900} /></strong><span>/ 100</span><span className="badge badge-success">Qualificado</span></div>
+          {criteria.map(([label, value, evidence], index) => <div className="profile-criterion" key={label}>
+            <div><span>{label}</span><b>{value}</b></div>
+            <div className="criterion-track" role="meter" aria-label={label} aria-valuemin={0} aria-valuemax={100} aria-valuenow={value}><i style={{ width: `${value}%`, animation: `dmGrow 1.1s var(--ease) ${index * 140 + 200}ms both`, transformOrigin: 'left' }} /></div>
+            <p>{evidence}</p></div>)}
+          <p className="crm-note">Média dos quatro critérios. A qualificação exige os quatro critérios e o limiar definido no agente.</p>
+        </section>}
+        <section className="card profile-deals-card dm-rise-in" style={{ animationDelay: step >= 1 ? '0ms' : '150ms' }}>
+          <div className="profile-section-head"><h2>OPORTUNIDADES</h2><button className="profile-link" tabIndex={-1}>+ Nova</button></div>
+          <ul className="profile-deal-list"><li><a href="#pipeline" tabIndex={-1}><b>Harmonização · Beatriz Nogueira</b><small>{brl(4000)} · {stages.meeting}</small></a></li></ul>
+        </section>
+        <section className="card profile-contact-card dm-rise-in" style={{ animationDelay: '250ms' }}>
+          <div className="profile-section-head"><h2>DADOS DE CONTATO</h2><button className="profile-link" tabIndex={-1}>Editar</button></div>
+          <dl>{[['Telefone', '+55 11 9 •••• 4821'], ['E-mail', 'bea•••@email.com'], ['Empresa', 'Não informado'], ['Cargo', 'Não informado'], ['Cidade', 'Não informado'], ['Origem', 'Instagram Ads']].map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}</dl>
+        </section>
       </aside>
     </div>
   </div>;
 }
 
-/* ============ Reuniões ============ */
+/* ============ Reuniões (mesma estrutura de src/pages/Meetings.tsx) ============ */
 export function MeetingsScene({ step, go }: SceneProps) {
   const day = useMemo(meetingDay, []);
   const dayOffset = (offset: number) => { const d = new Date(); d.setDate(d.getDate() + offset); return d; };
@@ -67,41 +95,45 @@ export function MeetingsScene({ step, go }: SceneProps) {
   const marked = new Set([day.getDate(), dayOffset(1).getDate(), dayOffset(2).getDate()]);
   const today = new Date().getDate();
   const month = day.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
-  const slots = ['09:00', '10:30', '14:30', '16:00', '17:30'];
-  return <div className="dm-page v2-page" data-step={step}>
+  const iso = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, '0')}-${String(day.getDate()).padStart(2, '0')}T14:30`;
+  const actions = <div className="v2-row-actions"><span className="v2-btn" aria-hidden="true"><DIcon name="download" size={16} />Baixar .ics</span><span className="v2-btn" aria-hidden="true"><DIcon name="edit" size={16} />Editar</span><span className="v2-btn v2-icon-btn v2-danger" aria-hidden="true"><DIcon name="trash" size={16} /></span></div>;
+  return <div className="content v2-page dm-meet" data-step={step}>
     <div className="page-header"><div><h1 className="page-title">Reuniões</h1><p className="page-description">Organize conversas comerciais e registre os resultados.</p></div>
       <div className="page-actions"><button className="v2-primary" tabIndex={-1}><DIcon name="plus" size={16} /> Agendar reunião</button></div></div>
-    <div className="v2-stats"><div><span>Próximas reuniões</span><b className="accent"><Count to={4} ms={700} /></b><small>Agendadas para o futuro</small></div><div><span>Realizadas</span><b>12</b><small>Resultados registrados</small></div><div><span>Agendadas pela IA</span><b>9</b><small>Sem ninguém digitar</small></div><div><span>Total de reuniões</span><b>17</b><small>Todo o histórico</small></div></div>
+    <div className="v2-stats"><div><span>Próximas reuniões</span><b className="accent"><Count to={3} ms={700} /></b><small>Agendadas para o futuro</small></div><div><span>Realizadas</span><b>1</b><small>Resultados registrados</small></div><div><span>Canceladas</span><b>0</b><small>Canceladas na plataforma</small></div><div><span>Total de reuniões</span><b>4</b><small>Todo o histórico</small></div></div>
     <div className="v2-body">
       <div className="v2-card v2-list">
-        <div className="v2-tabs"><button className="v2-tab active" tabIndex={-1}>Todas<span className="v2-count">17</span></button><button className="v2-tab" tabIndex={-1}>Próximas<span className="v2-count">4</span></button><button className="v2-tab" tabIndex={-1}>Realizadas<span className="v2-count">12</span></button></div>
+        <div className="v2-tabs" role="tablist">{[['Todas', 4, true], ['Próximas', 3, false], ['Realizadas', 1, false], ['Canceladas', 0, false]].map(([l, n, a]) => <button key={l as string} className={`v2-tab ${a ? 'active' : ''}`} tabIndex={-1}>{l}<span className="v2-count">{n}</span></button>)}</div>
         <Hot on={step === 0} go={go} hint="Abrir a reunião" className="dm-meeting-wrap" radius="16px">
           <article className="v2-meeting dm-new-meeting">
             <div className="v2-date" aria-hidden="true"><span>{mine.month}</span><b>{mine.day}</b></div>
-            <div className="v2-meeting-info"><div className="v2-title-row"><h2>Avaliação · Beatriz Nogueira</h2><span className="v2-pill"><i />Agendada</span><span className="v2-pill ai"><DIcon name="spark" size={11} /> Agendada pela IA</span></div>
+            <div className="v2-meeting-info"><div className="v2-title-row"><h2>Avaliação · Beatriz Nogueira</h2><span className="v2-pill"><i />Agendada</span><span className="v2-pill ai">Agendada pela IA</span></div>
               <div className="v2-meta"><span><DIcon name="clock" size={15} />14:30 · 30 min</span><span><DIcon name="globe" size={15} />Brasília (GMT-3)</span><span><DIcon name="user" size={15} />Beatriz Nogueira</span><span className="v2-location"><DIcon name="link" size={15} />meet.google.com/abc-defg-hij</span></div></div>
-            <div className="v2-row-actions"><span className="v2-btn" aria-hidden="true"><DIcon name="download" size={16} />Baixar .ics</span></div>
+            {actions}
           </article>
         </Hot>
-        {step >= 1 && <div className="dm-detail" key="detail">
-          {[['video', 'Link do Google Meet gerado', 'meet.google.com/abc-defg-hij'], ['mail', 'Convite enviado por e-mail', 'Beatriz recebeu o convite com os dados da avaliação'], ['whatsapp', 'Lembrete automático no WhatsApp', 'Véspera às 18:00 e 2 horas antes'], ['calendar', 'Google Agenda da Dra. Helena atualizado', 'Horário bloqueado, sem risco de conflito']].map(([icon, title, text], index) =>
-            <div className="dm-detail-row" key={title} style={s(index)}><span className="dm-ic green"><DIcon name={icon as 'video'} size={16} /></span><div><b>{title}</b><small>{text}</small></div><span className="dm-done"><DIcon name="check" size={14} /></span></div>)}
-        </div>}
         {list.map((m) => { const b = block(m.d); return <article className="v2-meeting" key={m.title}>
           <div className={`v2-date ${m.state}`} aria-hidden="true"><span>{b.month}</span><b>{b.day}</b></div>
           <div className="v2-meeting-info"><div className="v2-title-row"><h2>{m.title}</h2><span className={`v2-pill ${m.state}`}><i />{m.state === 'completed' ? 'Realizada' : 'Agendada'}</span>{m.ai && <span className="v2-pill ai">Agendada pela IA</span>}</div>
-            <div className="v2-meta"><span><DIcon name="clock" size={15} />{m.time} · 30 min</span><span><DIcon name="user" size={15} />{m.who}</span></div></div></article>; })}
+            <div className="v2-meta"><span><DIcon name="clock" size={15} />{m.time} · 30 min</span><span><DIcon name="globe" size={15} />Brasília (GMT-3)</span><span><DIcon name="user" size={15} />{m.who}</span></div></div>{actions}</article>; })}
         <div className="v2-hint"><DIcon name="spark" size={18} /><span>Reuniões marcadas pela IA aparecem aqui automaticamente, com link do Meet e convite enviado ao lead.</span></div>
       </div>
       <aside className="v2-side">
-        <div className="card calendar-connect"><div className="calendar-connect-main"><span className="channel-mark">G</span><div><b>Google Agenda <span className="badge badge-success">Conectado</span></b><p>Dra. Helena · a IA só oferece horários livres.</p></div></div></div>
-        <div className="v2-card v2-cal"><div className="v2-cal-head"><b>{month.charAt(0).toUpperCase() + month.slice(1)}</b></div>
+        <div className="card calendar-connect"><div className="calendar-connect-main"><span className="channel-mark google" aria-hidden="true">G</span><div><b>Minha agenda Google <span className="badge badge-success">Conectada</span></b><p>helena@clinica.com · A IA oferece seus horários livres e cria o evento.</p></div></div><button className="btn" tabIndex={-1}>Desconectar</button></div>
+        <div className="v2-card v2-cal"><div className="v2-cal-head"><b>{month.charAt(0).toUpperCase() + month.slice(1)}</b><div><button type="button" tabIndex={-1} aria-label="Mês anterior"><DIcon name="chevronLeft" size={18} /></button><button type="button" tabIndex={-1} aria-label="Próximo mês"><DIcon name="chevron" size={18} /></button></div></div>
           <div className="v2-cal-grid v2-cal-week" aria-hidden="true">{['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].map((d, i) => <span key={i}>{d}</span>)}</div>
-          <div className="v2-cal-grid">{cells.map((n, i) => n ? <span key={i} className={`v2-day ${n === today ? 'today' : ''} ${marked.has(n) ? 'has' : ''} ${n === day.getDate() ? 'dm-mine' : ''}`}>{n}</span> : <span key={i} />)}</div></div>
-        {step >= 1 && <div className="card dm-free" key="free"><div className="dm-card-head"><b>Horários livres · {weekdayShort(day)}</b><span className="badge badge-neutral">Dra. Helena</span></div>
-          <div className="dm-slot-grid">{slots.map((t) => <span key={t} className={t === '14:30' ? 'taken' : ''}>{t}{t === '14:30' && <small>Beatriz</small>}</span>)}</div></div>}
+          <div className="v2-cal-grid">{cells.map((n, i) => n ? <span key={i} className={`v2-day ${n === today ? 'today' : ''} ${marked.has(n) ? 'has' : ''}`}>{n}</span> : <span key={i} />)}</div></div>
+        <p className="v2-tz"><DIcon name="info" size={14} /><span>Horários exibidos em Brasília (America/Sao_Paulo). Para reuniões manuais, exporte o arquivo .ics.</span></p>
       </aside>
     </div>
+    {step >= 1 && <div className="modal-overlay" key="modal"><div className="modal crm-modal" role="dialog" aria-modal="true" aria-label="Editar reunião"><div className="modal-head"><div><h2 className="page-title">Editar reunião</h2><span>Cadastre os dados do compromisso.</span></div><span className="btn btn-ghost" aria-hidden="true">✕</span></div>
+      <div className="modal-body">
+        <label><span>Título *</span><input readOnly tabIndex={-1} value="Avaliação · Beatriz Nogueira" /></label>
+        <label><span>Contato</span><select tabIndex={-1} value="b" onChange={() => {}}><option value="b">Beatriz Nogueira</option></select></label>
+        <label><span>Data e horário *</span><input readOnly tabIndex={-1} value={iso.replace('T', ' ')} /><small className="crm-form-help">Digite o horário no fuso do seu dispositivo. A lista será convertida para Brasília.</small></label>
+        <div className="form-grid"><label><span>Duração em minutos *</span><input readOnly tabIndex={-1} value="30" /></label><label><span>Status</span><select tabIndex={-1} value="s" onChange={() => {}}><option value="s">Agendada</option></select></label></div>
+        <label><span>Local ou link da reunião</span><input readOnly tabIndex={-1} value="meet.google.com/abc-defg-hij" /></label></div>
+      <div className="modal-footer"><span className="btn" aria-hidden="true">Cancelar</span><span className="btn btn-primary" aria-hidden="true">Salvar reunião</span></div></div></div>}
   </div>;
 }
 
@@ -138,7 +170,6 @@ export function PipelineScene({ step, go }: SceneProps) {
   const card = (d: Deal) => {
     const mine = d.id === 'bea';
     const body = <article key={mine ? `bea${step}` : d.id} className={`opp-card ${mine ? 'dm-bea' : ''} ${mine ? (hop[step] ? 'dm-land' : 'dm-pop') : ''}`} style={mine ? ({ '--hop': hop[step] } as CSSProperties) : undefined}>
-      {mine && <span className="dm-ia-tag"><DIcon name="spark" size={11} /> Criada pela IA</span>}
       <div className="opp-card-title">{d.title}</div><div className="opp-card-sub">{d.sub}</div>
       <div className="opp-card-value">{brl(d.value)}<small>{stageProbability[d.stage]}%</small></div>
       <div className="opp-card-foot"><span className="opp-meta"><DIcon name="calendar" size={13} />{d.due}</span>{d.tasks ? <span className="opp-meta"><DIcon name="check" size={13} />{d.tasks}</span> : null}<span className="opp-meta"><DIcon name="clock" size={13} />{d.days}d</span><span className="opp-card-owner"><span className="opp-avatar sm">{d.owner}</span></span></div>
