@@ -64,22 +64,22 @@ export const chapters: Chapter[] = [
       { title: 'Entende e pergunta', text: 'Uma pergunta por vez, como um bom SDR.', icon: 'user',
         say: ['Ela não despeja informação: descobre o prazo e a necessidade com perguntas naturais.', 'O critério "Prazo" acabou de ser preenchido com evidência da própria conversa.'],
         tip: 'Pergunte: "Hoje, quem faz essas perguntas de qualificação no time de vocês?"' },
-      { title: 'Qualifica e oferece horários', text: 'Orçamento e decisor confirmados; a IA propõe horários livres.', icon: 'target',
-        say: ['Ela descobriu orçamento e quem decide e já propõe horários livres da agenda.', 'A ficha e o score desta conversa aparecem no próximo capítulo, e a oportunidade já entra no funil sem ninguém cadastrar.'] },
+      { title: 'Lead quente: score 92', text: 'Orçamento e decisor confirmados. Oportunidade criada.', icon: 'target',
+        say: ['Orçamento, necessidade, autoridade e prazo: os quatro critérios, cada um com a frase do cliente como prova.', 'A oportunidade já foi criada no funil, sem ninguém cadastrar.'] },
       { title: 'Reunião agendada', text: 'Horário livre da agenda, convite e link do Meet enviados.', icon: 'calendar',
-        say: ['A IA oferece só horários livres na agenda do consultor.', 'O cliente escolheu, a reunião foi marcada e o convite com o link do Meet foi enviado. Tudo isso de madrugada.'],
+        say: ['A IA oferece só horários realmente livres na agenda do consultor.', 'O cliente escolheu, a reunião foi marcada e o convite foi enviado. Tudo isso de madrugada.'],
         tip: 'Momento-chave: faça uma pausa e pergunte "Quantas reuniões vocês perdem por demora na resposta?"' },
     ],
   },
   {
     id: 'crm', title: 'Ficha do cliente', nav: 'contacts', minutes: 2,
     steps: [
-      { title: 'Ficha criada sozinha', text: 'Resumo da IA e próxima ação, sem digitação.', icon: 'user',
+      { title: 'Ficha criada sozinha', text: 'Resumo factual da conversa, sem digitação.', icon: 'user',
         say: ['Quando o vendedor chega de manhã, a ficha já está pronta: quem é, o que quer e o que falta decidir.', 'O resumo é factual: só o que o cliente disse.'] },
-      { title: 'Score com evidência', text: 'Quatro critérios, cada um com o que o cliente disse.', icon: 'target',
+      { title: 'Critérios com evidência', text: 'Cada nota tem a frase do cliente como prova.', icon: 'target',
         say: ['Nada de "achismo": cada critério mostra a evidência da conversa.', 'O gestor pode auditar por que um lead recebeu a nota.'] },
-      { title: 'Atividade registrada', text: 'Da primeira mensagem à triagem, na ficha.', icon: 'repeat',
-        say: ['Histórico completo na aba Atividade, com a oportunidade vinculada. Quem assumir o contato sabe de onde partir.'],
+      { title: 'Linha do tempo automática', text: 'Tudo registrado: da primeira mensagem à reunião.', icon: 'repeat',
+        say: ['Histórico completo e tarefas criadas pela IA. Quem assumir o contato sabe exatamente de onde partir.'],
         tip: 'Pergunte: "Hoje esse histórico fica no CRM, em planilha ou na cabeça do vendedor?"' },
     ],
   },
@@ -88,8 +88,8 @@ export const chapters: Chapter[] = [
     steps: [
       { title: 'Reunião na agenda do time', text: 'Marcada pela IA, sincronizada com o Google Agenda.', icon: 'calendar',
         say: ['A reunião da madrugada já aparece aqui, marcada como "Agendada pela IA".', 'Clique nela para ver os detalhes.'], hot: 'Abrir a reunião' },
-      { title: 'Tudo editável', text: 'Horário, contato, duração e link do Meet na reunião.', icon: 'check',
-        say: ['A reunião marcada pela IA é uma reunião como qualquer outra: o time pode editar, exportar para o calendário (.ics) ou cancelar.', 'Zero trabalho manual para o consultor.'] },
+      { title: 'Convite, Meet e lembrete', text: 'O lead recebe tudo e não esquece.', icon: 'check',
+        say: ['Link do Meet gerado, convite por e-mail e lembrete automático no WhatsApp.', 'Menos no-show e zero trabalho manual para o consultor.'] },
     ],
   },
   {
@@ -121,9 +121,9 @@ export const chapters: Chapter[] = [
   {
     id: 'controle', title: 'Você no controle', nav: 'agents', minutes: 3,
     steps: [
-      { title: 'A IA fala como a {empresa}', text: 'Nome, instruções comerciais e limite de qualificação.', icon: 'user',
-        say: ['Aqui o time define quem é a Felipa, as instruções comerciais (tom de voz, quando chamar uma pessoa) e o limite de qualificação.'] },
-      { title: 'Só responde com o que a base diz', text: 'Serviços e FAQs aprovados na base de conhecimento.', icon: 'shield',
+      { title: 'A IA fala como a {empresa}', text: 'Tom de voz, instruções e critérios de qualificação.', icon: 'user',
+        say: ['Aqui o time define como a Felipa fala e o que conta como lead qualificado.', 'Os pesos dos critérios e a nota de corte são ajustáveis.'] },
+      { title: 'Só responde com o que a base diz', text: 'Procedimentos e FAQs da clínica na base de conhecimento.', icon: 'shield',
         say: ['A IA consulta apenas a base da empresa. Se não souber, não inventa: passa para um humano.', 'Preços e condições ficam sob controle de vocês.'],
         tip: 'Pergunte: "Quais são as 5 perguntas que seu time mais responde por dia?"' },
       { title: 'Humano assume quando quiser', text: 'Um clique pausa a IA e o histórico continua.', icon: 'user',
@@ -133,7 +133,7 @@ export const chapters: Chapter[] = [
     ],
   },
   {
-    id: 'integracoes', title: 'Conectado ao que você usa', nav: null, full: true, minutes: 2,
+    id: 'integracoes', title: 'Conectado ao que você usa', nav: 'integrations', minutes: 2,
     steps: [
       { title: 'Seus canais, no mesmo lugar', text: 'WhatsApp, Instagram, e-mail e agenda conectados.', icon: 'plug',
         say: ['Todos os canais em uma única caixa de entrada.', 'Você mantém o número de WhatsApp que já usa: não precisa trocar.'] },

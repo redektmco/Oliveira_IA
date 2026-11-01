@@ -10,16 +10,15 @@ import '../pages/ai.css';
 import '../pages/crm.css';
 import '../pages/pipeline.css';
 import '../pages/home.css';
-import '../pages/profile.css';
 import '../styles/brand.css';
 import './demo.css';
 import { chapters, frameIndex, frames, navTarget, type CaptionIcon } from './script';
 import { useDemo, useDemoKeys } from './state';
 import { DIcon, initials, type DName } from './ui';
-import { Channels, Closing, Cover, Problem, Results } from './scenes-full';
+import { Closing, Cover, Problem, Results } from './scenes-full';
 import InboxScene from './scenes-inbox';
 import { MeetingsScene, PipelineScene, ProfileScene } from './scenes-crm';
-import { AgentScene, AssistantScene, KnowledgeScene } from './scenes-ai';
+import { AgentScene, AssistantScene, IntegrationsScene, KnowledgeScene } from './scenes-ai';
 import Presenter from './Presenter';
 
 const groups: { label: string; items: { id: string; label: string; icon: IconName }[] }[] = [
@@ -113,8 +112,8 @@ export default function DemoApp() {
     case 'agenda': scene = <MeetingsScene step={step} company={company} go={go} />; break;
     case 'funil': scene = <PipelineScene step={step} company={company} go={go} />; break;
     case 'assistente': scene = <AssistantScene step={step} company={company} go={go} />; break;
-    case 'controle': scene = step === 0 ? <AgentScene step={step} company={company} go={go} /> : step === 1 ? <KnowledgeScene /> : <InboxScene mode="handoff" step={step - 2} company={company} go={go} />; break;
-    case 'integracoes': scene = <Channels step={step} company={company} go={go} />; break;
+    case 'controle': scene = step === 0 ? <AgentScene step={step} company={company} go={go} /> : step === 1 ? <KnowledgeScene step={step} company={company} go={go} /> : <InboxScene mode="handoff" step={step - 2} company={company} go={go} />; break;
+    case 'integracoes': scene = <IntegrationsScene step={step} company={company} go={go} />; break;
     case 'resultados': scene = <Results step={step} company={company} go={go} />; break;
     default: scene = <Closing step={step} company={company} go={go} />;
   }
