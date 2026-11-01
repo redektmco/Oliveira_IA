@@ -1,7 +1,8 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import type { Agent, Contact, Conversation, Knowledge, Message, Triage } from '../src/lib/types.js';
 import type { ChatRepository } from './chat.js';
-import { HttpError } from './validation.js';
+import { HttpError, dailyLimit } from './validation.js';
+import { chatLimitError, type UsagePolicy } from './ai-limits.js';
 
 export type ServerConfig = { supabaseUrl: string; anonKey: string; serviceKey: string; anthropicKey: string; configuredModel?: string; dailyRequestLimit?: string };
 
@@ -105,7 +106,24 @@ export class SupabaseChatRepository implements ChatRepository {
     return (data || []) as Knowledge[];
   }
 
-  async reserveUsage(userId: string, model: string, limit: number): Promise<string> {
+  /**
+   * Reserva uma chamada de IA. Com uma política, usa reserve_ai_usage: o chat tem janela de 5h e teto diário,
+   * os demais tipos (SDR IA, automações, resumos) não têm limite. Um número usa o limite diário antigo.
+   * Sem a migração 202611070010, cai no limite antigo para não interromper o atendimento.
+   */
+  async reserveUsage(userId: string, model: string, limit: number | UsagePolicy): Promise<string> {
+    if (typeof limit !== 'number') {
+      const policy = limit;
+      const chat = policy.kind === 'chat' ? policy : null;
+      const { data, error } = await this.admin.rpc('reserve_ai_usage', {
+        p_user_id: userId, p_model: model, p_kind: policy.kind, p_actor: chat?.actorId ?? null,
+        p_window_budget: chat?.windowMicros ?? null, p_daily_budget: chat?.dailyMicros ?? null, p_timezone: chat?.timezone ?? 'America/Sao_Paulo',
+      });
+      if (!error && typeof data === 'string') return data;
+      if (chat && error?.code === 'P0001' && typeof error.message === 'string' && error.message.startsWith('AI_CHAT_')) throw await chatLimitError(this.admin, userId, chat, error.message);
+      if (!error || !['PGRST202', '42883'].includes(error.code ?? '')) databaseError(error);
+      return this.reserveUsage(userId, model, chat ? dailyLimit(process.env.AI_DAILY_REQUEST_LIMIT) : 10_000);
+    }
     const { data, error } = await this.admin.rpc('reserve_ai_request', { p_user_id: userId, p_model: model, p_daily_limit: limit });
     if (error?.code === 'P0001' && error.message === 'AI_DAILY_LIMIT_REACHED') {
       throw new HttpError(429, 'Você atingiu o limite diário de chamadas de IA. O limite é renovado à meia-noite UTC.');

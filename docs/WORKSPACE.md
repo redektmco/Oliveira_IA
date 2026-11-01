@@ -126,3 +126,24 @@ Arquivos de até 2 MB ficam no bucket privado `crm-files`, com download autoriza
 Retenção opcional anonimiza o conteúdo de mensagens antigas e limpa resumos antigos; não apaga cadastro, notas internas ou arquivos. Ative o agendador para executar essa política. O histórico automático pode ser ocultado na atividade da ficha sem destruir as mensagens usadas na Caixa de entrada.
 
 Validação local: TypeScript, build Vite, testes de backend, SQL real em PGlite e navegação em Chromium. Mocks e demonstração não comprovam entrega externa, OAuth aprovado, pagamentos reais ou a reconexão do WhatsApp em produção.
+
+## Workspaces de clientes e limite do chat de IA
+
+Implementado em 01/11/2026. Exige `supabase/migrations/202611070010_platform_limits.sql` (aditiva e idempotente): `SUPABASE_PROJECT_REF=mdzflolthybnzewhpxno npm run platform:migrate`, conferir com `npm run platform:check`.
+
+**Separação por workspace.** Cada cliente é dono do próprio workspace; contatos, conversas, agentes, equipe, configurações e uso ficam isolados pelas políticas RLS existentes. O cliente só vê os workspaces dos quais participa, então não enxerga a agência nem outros clientes.
+
+- **Painel da agência** (menu **Clientes (agência)**, `#agency`): aparece só para os e-mails listados em `PLATFORM_ADMIN_EMAILS` na Vercel (e-mail confirmado). Ali a agência cria o workspace do cliente (nome da empresa + e-mail), adiciona contas que já existiam, entra em qualquer cliente, gera link de acesso e ajusta os limites do chat.
+- **Novo cliente.** O servidor cria a conta pelo convite do Supabase Auth. Se o e-mail não puder ser enviado (limite de SMTP), a tela mostra um link de uso único para mandar ao cliente. Ao abrir, o cliente define a senha e entra no workspace dele.
+- **Acesso oculto.** A agência entra como administradora com `hidden = true`: não aparece em Equipe, na lista de responsáveis nem no resumo diário, e o cliente não consegue alterá-la ou removê-la. Na auditoria do cliente as ações aparecem como "Agência". Se um e-mail sair de `PLATFORM_ADMIN_EMAILS`, o acesso oculto deixa de valer.
+- **Cadastro público fechado.** A tela de login não oferece mais "Criar conta". Para bloquear também pela API, desative **Authentication → Sign In / Providers → Allow new users to sign up** no Supabase (o convite da agência continua funcionando, pois usa a API administrativa).
+
+**Limite do chat de IA (estilo Claude).** Vale para o Assistente da tela inicial e o Playground, por pessoa em cada workspace:
+
+- **Sessão de 5 horas:** começa na primeira mensagem e reinicia 5 horas depois. **Limite diário:** zera à meia-noite no fuso do workspace.
+- O consumo é medido em custo equivalente de tokens (Haiku 4.5: US$ 1/5 por milhão de tokens de entrada/saída; Sonnet 4.6: US$ 3/15). Padrões: US$ 1 por sessão e US$ 3 por dia (`AI_CHAT_WINDOW_USD`, `AI_CHAT_DAILY_USD`). A agência pode personalizar por cliente.
+- O cliente vê só a porcentagem: barra abaixo do campo do assistente e do Playground ("Sessão: 34% usada · reinicia em 2 h 13 min") e o quadro completo em **Uso da IA**. Ao chegar em 100%, a mensagem informa o horário de retorno.
+- **SDR IA sem limite:** respostas automáticas no WhatsApp, widget, e-mail e Instagram, conversas de teste da Caixa de entrada, automações ("Gerar com IA") e resumos não são bloqueados. Cada chamada é registrada com o tipo em **Uso da IA**.
+- No máximo duas respostas do chat em andamento por pessoa. Sem a migração, o servidor usa o limite diário antigo (`AI_DAILY_REQUEST_LIMIT`) e o medidor não aparece.
+
+Validação local: `tests/platform-limits.test.ts` (janela de 5h, teto diário, pessoas independentes, SDR sem limite, chamadas simultâneas, RLS das novas tabelas em PGlite, mensagens, admins da agência e criação do workspace com Supabase simulado). Convite por e-mail real e o painel em produção **não foram validados neste ambiente**.

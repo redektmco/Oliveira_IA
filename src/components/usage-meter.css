@@ -1,0 +1,20 @@
+/* Medidor de uso do chat de IA (estilo Claude). Usa os tokens globais; dentro de .home usa as cores da tela inicial. */
+.usage-meter { padding: var(--sp-4); display: grid; gap: var(--sp-4); }
+.usage-meter-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-2); flex-wrap: wrap; }
+.usage-meter-head b { font-size: var(--fs-lg); }
+.usage-meter-head small, .usage-row small, .usage-note { color: var(--muted); font-size: var(--fs-sm); }
+.usage-note { margin: 0; line-height: 1.5; }
+.usage-row { display: grid; gap: 6px; }
+.usage-row-head { display: flex; justify-content: space-between; gap: var(--sp-2); font-size: var(--fs-md); }
+.usage-row-head span { color: var(--text-2); font-variant-numeric: tabular-nums; }
+.usage-bar { height: 8px; border-radius: 999px; background: var(--surface-3, #f4f4f5); overflow: hidden; }
+.usage-bar i, .usage-inline-bar i { display: block; height: 100%; border-radius: inherit; background: var(--info); transition: width .4s ease; }
+.usage-row.mid .usage-bar i, .usage-inline.mid .usage-inline-bar i { background: var(--info); }
+.usage-row.high .usage-bar i, .usage-inline.high .usage-inline-bar i { background: var(--warning); }
+.usage-row.full .usage-bar i, .usage-inline.full .usage-inline-bar i { background: var(--danger); }
+.usage-row.full .usage-row-head span { color: var(--danger-ink, var(--danger)); font-weight: 600; }
+
+.usage-inline { display: inline-flex; align-items: center; gap: var(--sp-2); font-size: var(--fs-xs); color: var(--h-muted, var(--muted)); text-decoration: none; font-variant-numeric: tabular-nums; }
+.usage-inline:hover { color: var(--h-text, var(--text)); }
+.usage-inline-bar { width: 56px; height: 4px; border-radius: 999px; background: var(--h-border, var(--border)); overflow: hidden; flex: none; }
+.usage-inline.full { color: var(--h-bad, var(--danger)); }

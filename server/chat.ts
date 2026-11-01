@@ -1,6 +1,7 @@
 import type { Agent, Contact, Conversation, Knowledge, Message, Triage } from '../src/lib/types.js';
 import { parseTriageAnswer, triagePrompt } from './triage.js';
 import { dailyLimit, HttpError, resolveModel, type ChatInput, type ChatMessage } from './validation.js';
+import type { UsagePolicy } from './ai-limits.js';
 
 export interface ChatRepository {
   authenticate: (token: string) => Promise<{ id: string }>;
@@ -8,7 +9,7 @@ export interface ChatRepository {
   conversation: (userId: string, id: string) => Promise<Conversation | null>;
   messages: (userId: string, conversationId: string) => Promise<Message[]>;
   knowledge: (userId: string) => Promise<Knowledge[]>;
-  reserveUsage: (userId: string, model: string, limit: number) => Promise<string>;
+  reserveUsage: (userId: string, model: string, limit: number | UsagePolicy) => Promise<string>;
   completeUsage: (userId: string, id: string, usage: { input_tokens: number; output_tokens: number }) => Promise<void>;
   failUsage: (userId: string, id: string) => Promise<void>;
   appendTurn: (userId: string, conversationId: string, user: string, assistant: string) => Promise<void>;
@@ -26,6 +27,8 @@ export interface ChatDependencies {
   claude: ClaudeProvider;
   configuredModel?: string;
   dailyRequestLimit?: string;
+  /** Política de uso: chat (Playground, com limite) ou sdr (conversas, sem limite). */
+  usage?: UsagePolicy;
   language?:string;
   /** Optional sales automation (pipeline + meeting booking) for conversations linked to a contact. */
   automation?: {
@@ -123,7 +126,7 @@ export async function executeChat(input: ChatInput, token: string, deps: ChatDep
     history = messages.map((message) => ({ role: message.role === 'user' ? 'user' : 'assistant', content: message.content }));
   }
   const knowledge = await repository.knowledge(user.id);
-  const usageId = await repository.reserveUsage(user.id, model, dailyLimit(deps.dailyRequestLimit));
+  const usageId = await repository.reserveUsage(user.id, model, deps.usage ?? dailyLimit(deps.dailyRequestLimit));
   let providerCompleted = false;
   try {
     const scheduling = contact && deps.automation ? await deps.automation.context(contact).catch(() => null) : null;

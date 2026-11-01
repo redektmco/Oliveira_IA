@@ -9,8 +9,8 @@ export type ChatRequest={agentId:string;conversationId?:string;message:string;hi
 export type ChatResult={text:string;usage:{input_tokens:number;output_tokens:number};conversationId?:string};
 type WorkspaceInfo={id:string;name:string;role:WorkspaceRole};
 interface Workspace{
- data:DatabaseState;demo:boolean;loading:boolean;error:string|null;ownerId:string;userId:string;role:WorkspaceRole;workspaceName:string;logo:string;phoneFormat:string;workspaces:WorkspaceInfo[];
- refresh:(silent?:boolean)=>Promise<void>;api:<T=any>(action:string,input?:Record<string,unknown>)=>Promise<T>;switchWorkspace:(id:string)=>void;
+ data:DatabaseState;demo:boolean;loading:boolean;error:string|null;ownerId:string;userId:string;role:WorkspaceRole;workspaceName:string;logo:string;phoneFormat:string;workspaces:WorkspaceInfo[];platformAdmin:boolean;
+ refresh:(silent?:boolean)=>Promise<void>;api:<T=any>(action:string,input?:Record<string,unknown>)=>Promise<T>;switchWorkspace:(id:string,force?:boolean)=>void;
  create:<K extends EditableTable>(table:K,input:RowInput<K>)=>Promise<Tables[K]>;
  update:<K extends EditableTable>(table:K,id:string,patch:Partial<RowInput<K>>)=>Promise<void>;remove:(table:EditableTable,id:string)=>Promise<void>;askClaude:(request:ChatRequest)=>Promise<ChatResult>;
 }
@@ -44,7 +44,7 @@ export function useWorkspace(){const value=useContext(Context);if(!value)throw n
 export function WorkspaceProvider({demo,userId,children}:{demo:boolean;userId:string|null;children:ReactNode}){
  const [data,setData]=useState<DatabaseState>(()=>demo?loadDemo():emptyState()),dataRef=useRef(data);
  const [ownerId,setOwnerId]=useState(()=>{try{return sessionStorage.getItem(`oliveira-workspace-${userId}`)||userId||'demo';}catch{return userId||'demo';}}),ownerRef=useRef(ownerId);
- const [role,setRole]=useState<WorkspaceRole>('admin'),[workspaceName,setWorkspaceName]=useState('Oliveira & Co.'),[logo,setLogo]=useState(''),[phoneFormat,setPhoneFormat]=useState('international'),[workspaces,setWorkspaces]=useState<WorkspaceInfo[]>([]);
+ const [role,setRole]=useState<WorkspaceRole>('admin'),[workspaceName,setWorkspaceName]=useState('Oliveira & Co.'),[logo,setLogo]=useState(''),[phoneFormat,setPhoneFormat]=useState('international'),[workspaces,setWorkspaces]=useState<WorkspaceInfo[]>([]),[platformAdmin,setPlatformAdmin]=useState(false);
  const [loading,setLoading]=useState(!demo),[error,setError]=useState<string|null>(null),generation=useRef(0);
  const replace=useCallback((next:DatabaseState)=>{dataRef.current=next;setData(next);},[]);
  const commitDemo=(next:DatabaseState)=>{try{saveDemo(next);}catch{throw new Error('Não foi possível salvar no navegador. Libere o armazenamento e tente novamente.');}replace(next);};
@@ -84,14 +84,14 @@ export function WorkspaceProvider({demo,userId,children}:{demo:boolean;userId:st
     // A removed or disabled membership leaves a stale workspace id in this tab: fall back to the user's own workspace.
     if(e instanceof ApiError&&e.status===403&&userId&&ownerRef.current!==userId){try{sessionStorage.removeItem(`oliveira-workspace-${userId}`);}catch{}ownerRef.current=userId;setOwnerId(userId);window.dispatchEvent(new Event('oliveira-workspace-changed'));return;}
     throw e;
-   }setRole(info.role);setWorkspaceName(info.workspaceName);setLogo(info.logo);setPhoneFormat(info.phoneFormat);setWorkspaces(info.workspaces);
+   }setRole(info.role);setWorkspaceName(info.workspaceName);setLogo(info.logo);setPhoneFormat(info.phoneFormat);setWorkspaces(info.workspaces);setPlatformAdmin(Boolean(info.platformAdmin));
    const invitation=new URLSearchParams(location.search).get('invite');
    if(invitation){const accepted=await api('team.accept',{token:invitation});history.replaceState(null,'',location.pathname+location.hash);ownerRef.current=accepted.ownerId;setOwnerId(accepted.ownerId);try{sessionStorage.setItem(`oliveira-workspace-${userId}`,accepted.ownerId);}catch{}return;}
    await refresh();
   }catch(e){setError(e instanceof Error?e.message:'Não foi possível abrir o workspace.');setLoading(false);}
  },[api,demo,refresh,userId]);
  useEffect(()=>{ownerRef.current=ownerId;void load();return()=>{generation.current++;};},[ownerId,load]);
- const switchWorkspace=(id:string)=>{if(!workspaces.some(w=>w.id===id))return;generation.current++;replace(emptyState());setError(null);ownerRef.current=id;setOwnerId(id);try{sessionStorage.setItem(`oliveira-workspace-${userId}`,id);}catch{}window.dispatchEvent(new Event('oliveira-workspace-changed'));};
+ const switchWorkspace=(id:string,force=false)=>{if(!force&&!workspaces.some(w=>w.id===id))return;generation.current++;replace(emptyState());setError(null);ownerRef.current=id;setOwnerId(id);try{sessionStorage.setItem(`oliveira-workspace-${userId}`,id);}catch{}window.dispatchEvent(new Event('oliveira-workspace-changed'));};
  const create=async<K extends EditableTable>(table:K,input:RowInput<K>):Promise<Tables[K]>=>{
   if(demo){const now=new Date().toISOString(),row={...(table==='deals'?{assigned_to:userId||'demo',updated_at:now,stage_changed_at:now,closed_at:null}:{}),...(table==='deal_notes'?{author:'Visitante'}:{}),...input,id:crypto.randomUUID(),created_at:now}as Tables[K];const next={...dataRef.current,[table]:[...dataRef.current[table],row]};if(table==='deals'){const deal=row as Tables['deals'];next.deal_events=[...next.deal_events,{id:crypto.randomUUID(),deal_id:deal.id,kind:'created',detail:{stage:deal.stage,value:deal.value},actor_id:'demo',created_at:now}];}commitDemo(next);return row;}
   const {row}=await api('create',{table,input});replace({...dataRef.current,[table]:[...dataRef.current[table],row]});await refresh().catch(()=>{});return row;
@@ -106,5 +106,5 @@ export function WorkspaceProvider({demo,userId,children}:{demo:boolean;userId:st
   const session=await supabase!.auth.getSession();if(!session.data.session)throw new Error('Sua sessão expirou. Entre novamente.');
   try{const response=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${session.data.session.access_token}`,'X-Workspace-Id':ownerRef.current},body:JSON.stringify(request),signal:AbortSignal.timeout(55000)});const result=await response.json().catch(()=>({}));if(!response.ok)throw new Error(result.error||'O Claude não respondeu. Tente novamente.');return result;}finally{await refresh().catch(()=>{});}
  };
- return <Context.Provider value={{data,demo,loading,error,ownerId,userId:userId||'demo',role,workspaceName,logo,phoneFormat,workspaces,refresh,api,switchWorkspace,create,update,remove,askClaude}}>{children}</Context.Provider>;
+ return <Context.Provider value={{data,demo,loading,error,ownerId,userId:userId||'demo',role,workspaceName,logo,phoneFormat,workspaces,platformAdmin,refresh,api,switchWorkspace,create,update,remove,askClaude}}>{children}</Context.Provider>;
 }

@@ -21,7 +21,7 @@ Primeira versão funcional do fluxo comercial do protótipo Felipa: React, TypeS
 - Fila persistida com deduplicação, recuperação automática e indicação de falha ou envio não confirmado.
 - Demonstração independente de credenciais, com dados locais claramente identificados e nenhuma resposta de IA simulada.
 
-Cada conta tem um workspace privado. Equipe compartilhada, múltiplas organizações, assinaturas/cobrança, automações de follow-up e sincronização com CRM externo não fazem parte desta primeira versão. No WhatsApp, a IA atende textos de números autorizados; demais números, áudios e anexos ficam para atendimento humano. A IA pontua contatos, cria/avança oportunidades e pode marcar reuniões nos horários livres do SDR.
+Cada conta tem um workspace privado. A agência cria e acessa o workspace de cada cliente pelo painel **Clientes (agência)**, e o chat de IA tem limite por sessão de 5 horas e diário, com porcentagem estilo Claude (o SDR IA não tem limite); veja [docs/WORKSPACE.md](docs/WORKSPACE.md#workspaces-de-clientes-e-limite-do-chat-de-ia). Múltiplas organizações, assinaturas/cobrança, automações de follow-up e sincronização com CRM externo não fazem parte desta primeira versão. No WhatsApp, a IA atende textos de números autorizados; demais números, áudios e anexos ficam para atendimento humano. A IA pontua contatos, cria/avança oportunidades e pode marcar reuniões nos horários livres do SDR.
 
 ## Desenvolvimento
 

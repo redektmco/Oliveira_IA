@@ -6,7 +6,7 @@ import {serverConfig,createRepository} from './supabase.js';
 import {createClaude} from './anthropic.js';
 import {buildMessages,buildSystemPrompt} from './chat.js';
 import {parseTriageAnswer,triagePrompt} from './triage.js';
-import {dailyLimit,resolveModel,HttpError} from './validation.js';
+import {resolveModel,HttpError} from './validation.js';
 import {DeliveryError,ensureWhatsAppConnected,sendWhatsAppText} from './whatsapp-provider.js';
 import type {IncomingWhatsApp} from './whatsapp-events.js';
 import {applySalesAutomation,schedulingContext,syncDealAfterTurn} from './sales-automation.js';
@@ -44,7 +44,7 @@ export async function processWhatsAppJob(job:WhatsAppJob){
    if(!contact)throw new HttpError(404,'Contato da conversa não encontrado.');
    const contactHistory=await repository.contactMessages(job.user_id,contact.id);
    const model=resolveModel(agent.model,c.configuredModel);
-   const usageId=await repository.reserveUsage(job.user_id,model,dailyLimit(c.dailyRequestLimit));
+   const usageId=await repository.reserveUsage(job.user_id,model,{kind:'sdr'});
    let completed=false;
    try{
     const knowledge=await repository.knowledge(job.user_id);

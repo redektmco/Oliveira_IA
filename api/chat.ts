@@ -2,6 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import {access,contactAccess} from '../server/access.js';
 import {applySalesAutomation,schedulingContext,syncDealAfterTurn,type SchedulingContext} from '../server/sales-automation.js';
 import { createClaude } from '../server/anthropic.js';
+import { chatPolicy } from '../server/ai-limits.js';
 import { executeChat } from '../server/chat.js';
 import { createRepository, serverConfig } from '../server/supabase.js';
 import { HttpError, parseBearerToken, parseChatInput, publicError } from '../server/validation.js';
@@ -34,6 +35,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       claude: createClaude(settings.anthropicKey),
       configuredModel: settings.configuredModel,
       dailyRequestLimit: settings.dailyRequestLimit,
+      // Playground (sem conversa) usa o limite do chat; conversas do SDR IA não têm limite.
+      usage: input.conversationId ? { kind: 'sdr' } : await chatPolicy(scope.db, scope.ownerId, scope.user.id, scope.settings.general.timezone),
       language:scope.settings.general.language,
       automation:{
         context:contact=>schedulingContext(scope.db,scope.ownerId,contact,scope.settings.scheduling,scope.settings.general.timezone),

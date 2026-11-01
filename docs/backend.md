@@ -9,7 +9,9 @@ Configure estas variáveis somente no servidor/local e nas configurações do pr
 - `SUPABASE_URL` e `SUPABASE_ANON_KEY`: projeto e chave pública Supabase. Se omitidas, o servidor reutiliza `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY`.
 - `SUPABASE_SERVICE_ROLE_KEY`: chave secreta do backend para reservar uso e gravar respostas. Nunca prefixe com `VITE_`.
 - `ANTHROPIC_API_KEY` ou `AI_SECRET_CLAUDE`: chave da API criada no console Anthropic com créditos disponíveis. O nome padrão tem precedência se ambos existirem. O alias preserva o nome já cadastrado pelo usuário. Assinatura do aplicativo Claude não substitui créditos da API.
-- `AI_DAILY_REQUEST_LIMIT`: opcional, inteiro de `1` a `10000`; padrão `50` tentativas por usuário/dia UTC. Tentativas que falham também contam.
+- `AI_CHAT_WINDOW_USD` / `AI_CHAT_DAILY_USD`: limite do chat de IA (Assistente e Playground) por pessoa, em US$ equivalentes ao preço público por token; padrão `1` por sessão de 5 horas e `3` por dia (fuso do workspace). O SDR IA, automações e resumos não têm limite. A agência pode personalizar por cliente.
+- `AI_DAILY_REQUEST_LIMIT`: legado, usado só enquanto a migração `202611070010_platform_limits.sql` não for aplicada.
+- `PLATFORM_ADMIN_EMAILS`: e-mails confirmados da equipe da agência; libera o painel de clientes.
 - `ANTHROPIC_MODEL`: fallback opcional caso um agente não defina modelo. O padrão dos agentes é `claude-haiku-4-5-20251001`.
 - `WHATSAPP_EVO_URL`, `WHATSAPP_EVO_INSTANCE` e `WHATSAPP_EVO_TOKEN` (ou alias `WHATSAPP_TOKEN_EVO`): configuração privada de servidor para consultar e enviar pela instância Evolution. Nenhuma dessas variáveis deve usar prefixo `VITE_`.
 - `WHATSAPP_WEBHOOK_SECRET`: proteção da entrada Evolution por cabeçalho próprio.

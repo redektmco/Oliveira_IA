@@ -21,7 +21,7 @@ export const defaultSettings = (): WorkspaceSettings => ({
 export function mergeSettings(value: Partial<WorkspaceSettings> | null | undefined): WorkspaceSettings {
  const defaults=defaultSettings();return Object.fromEntries(Object.entries(defaults).map(([key,section])=>[key,{...section,...value?.[key as keyof WorkspaceSettings]}])) as WorkspaceSettings;
 }
-export type Member={id:string;user_id:string|null;owner_id:string;email:string;name:string;role:WorkspaceRole;status:'active'|'pending'|'disabled';created_at:string;last_seen_at?:string};
+export type Member={id:string;user_id:string|null;owner_id:string;email:string;name:string;role:WorkspaceRole;status:'active'|'pending'|'disabled';created_at:string;last_seen_at?:string;hidden?:boolean};
 export type AuditEntry={id:string;actor_email:string;action:string;created_at:string};
 export type SessionEntry={id:string;device:string;ip:string;last_seen_at:string;created_at:string;revoked_at:string|null;current?:boolean};
 export type ApiKeyInfo={id:string;name:string;prefix:string;last_used_at:string|null;created_at:string;revoked_at:string|null};
