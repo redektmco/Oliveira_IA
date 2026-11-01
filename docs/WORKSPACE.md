@@ -71,6 +71,24 @@ Chaves de API são exibidas uma única vez, guardadas por hash e podem ser revog
 
 Endpoints recebem eventos persistidos. Cada entrega inclui ID, timestamp e HMAC-SHA256 do corpo original. O destino deve deduplicar IDs e validar assinatura/timestamp. Há até quatro tentativas com espera crescente. URLs públicas HTTPS são validadas, os endereços DNS são verificados e o envio é fixado no IP verificado, sem seguir redirecionamentos. O agendador precisa estar ativo para executar a fila.
 
+## Agenda e pipeline automáticos
+
+Implementado em 01/11/2026. Configure em **Configurações → Agenda e pipeline**.
+
+- **Oportunidade automática.** Na primeira mensagem de um lead (WhatsApp, e-mail, Instagram ou widget), uma oportunidade é criada em **Novo lead** no Kanban, mesmo que um humano atenda. A cada resposta da IA, a etapa avança para **Em qualificação**, **Qualificado** e **Reunião agendada** conforme a triagem. A automação nunca volta etapas e não mexe em Proposta, Ganho ou Perdido. Oportunidade já encerrada não é reaberta automaticamente.
+- **Reunião marcada pela IA.** A IA recebe até nove horários livres do SDR responsável pelo lead (`assigned_to`; sem responsável, o dono do workspace), dentro do horário configurado, com antecedência mínima e no máximo três por dia. Ela oferece 2–3 opções e só confirma quando o cliente escolhe um horário da lista. O servidor revalida o horário antes de gravar: horário inventado ou ocupado nunca é confirmado; o cliente recebe as alternativas. A reunião aparece em **Reuniões**, na ficha e move a oportunidade para **Reunião agendada**. Tarefas repetidas da fila não duplicam a reunião.
+- **Google Calendar do SDR.** Cada pessoa conecta a própria agenda em **Reuniões → Conectar Google Calendar** (qualquer função). Com agenda conectada, os horários ocupados nela não são oferecidos e o evento é criado nela, com link do Google Meet (opcional) e convite ao lead que tiver e-mail. Sem agenda, a IA usa o horário configurado e as reuniões já cadastradas no painel.
+- Falhas de agenda, Google ou pipeline nunca bloqueiam a resposta no WhatsApp.
+
+Ativação:
+
+1. Aplique `supabase/migrations/202611010004_sales_automation.sql`. Antes disso, oportunidades e reuniões já funcionam, mas salvar a aba **Agenda e pipeline** e conectar agendas ficam indisponíveis.
+2. No Google Cloud, habilite a **Google Calendar API** no mesmo cliente OAuth do Gmail e cadastre o endereço de retorno `https://ai.v4oliveira.com.br/api/oauth?provider=google_calendar`. Escopos solicitados: `openid`, `email`, `calendar.events` e `calendar.freebusy`.
+3. Na Vercel, configure `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `INTEGRATION_ENCRYPTION_KEY` (32 bytes em hexadecimal) e `APP_ORIGIN`, e publique novamente.
+4. Cada SDR entra no painel, abre **Reuniões** e conecta a própria agenda.
+
+Os testes `tests/sales-automation.test.ts` cobrem etapas, horários livres, reservas idempotentes, recusa de horários fora da lista, dupla reserva e a migração em PGlite. A chamada real à API Google depende das credenciais acima e não foi validada neste ambiente.
+
 ## Privacidade, arquivos e validação
 
 Arquivos de até 2 MB ficam no bucket privado `crm-files`, com download autorizado por link de 60 segundos. Links de documentos existentes continuam disponíveis. A exportação de titular inclui cadastro, mensagens, notas, agenda, oportunidades e metadados de arquivos; a exclusão remove os arquivos privados e registros vinculados. Documentos em serviços externos precisam ser excluídos no serviço de origem.

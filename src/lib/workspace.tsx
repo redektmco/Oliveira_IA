@@ -31,6 +31,7 @@ export function WorkspaceProvider({demo,userId,children}:{demo:boolean;userId:st
    if(action==='api.list')return {keys:[],webhooks:[],deliveries:[]}as T;
    if(action==='security.list')return {sessions:[],audit:[],ip:''}as T;
    if(action==='billing')return {configured:false,plans:[],invoices:[],subscription:null}as T;
+   if(action==='calendar.status')return {configured:false,available:true,mine:null,calendars:[],scheduling:settings.scheduling}as T;
    throw new Error('Entre em sua conta para usar esta funcionalidade com dados reais.');
   }
   const session=await supabase?.auth.getSession(),token=session?.data.session?.access_token;if(!token)throw new Error('Sua sessão expirou. Entre novamente.');

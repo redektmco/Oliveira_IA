@@ -1,7 +1,8 @@
 import type {VercelRequest,VercelResponse} from '@vercel/node';
 import {waitUntil} from '@vercel/functions';
 import {parseWhatsAppEvent,secretMatches} from '../server/whatsapp-events.js';
-import {ingestWhatsApp,backgroundWorker} from '../server/whatsapp-bridge.js';
+import {ingestWhatsApp,backgroundWorker,bridgeDb} from '../server/whatsapp-bridge.js';
+import {ensureDealForConversation} from '../server/sales-automation.js';
 export const config={maxDuration:60};
 export default async function handler(req:VercelRequest,res:VercelResponse){
  res.setHeader('Cache-Control','no-store');
@@ -10,6 +11,9 @@ export default async function handler(req:VercelRequest,res:VercelResponse){
  if(typeof req.headers['content-type']!=='string'||!/^application\/json(?:;|$)/i.test(req.headers['content-type']))return res.status(415).json({error:'Envie JSON.'});
  const event=parseWhatsAppEvent(req.body,process.env.WHATSAPP_EVO_INSTANCE||'');
  if(!event)return res.status(200).json({ignored:true});
- try{const result=await ingestWhatsApp(event);if(result.queued)waitUntil(backgroundWorker());return res.status(200).json({accepted:true,duplicate:Boolean(result.duplicate)});}
+ try{const result=await ingestWhatsApp(event);if(result.queued)waitUntil(backgroundWorker());
+  // Every lead lands in the pipeline on its first message, even when a person answers it.
+  if(!event.fromMe&&typeof result.conversationId==='string')waitUntil(ensureDealForConversation(bridgeDb(),result.conversationId).catch(()=>null));
+ return res.status(200).json({accepted:true,duplicate:Boolean(result.duplicate)});}
  catch{return res.status(503).json({error:'Não foi possível guardar o evento; tente novamente.'});}
 }

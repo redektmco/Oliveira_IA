@@ -19,3 +19,12 @@ test('contact profile retains new notes and member assignment controls',async({p
  await page.reload();await expect(page.getByRole('combobox',{name:'Atribuir responsável',exact:true})).toHaveValue('demo');await page.getByRole('tab',{name:'Notas',exact:true}).click();await expect(page.locator('.profile-notes')).toContainText('Precisa de atendimento fora do horário comercial.');
  await page.screenshot({path:testInfo.outputPath('contact-profile-desktop.png'),fullPage:true});await page.setViewportSize({width:390,height:844});expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);await page.screenshot({path:testInfo.outputPath('contact-profile-mobile.png'),fullPage:true});
 });
+test('agenda e pipeline salva a automação comercial e reuniões mostram a conexão da agenda',async({page})=>{
+ const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));await demo(page);await page.goto('/#settings/scheduling');
+ await expect(page.getByRole('heading',{name:'Reuniões marcadas pela IA',exact:true})).toBeVisible();
+ await expect(page.getByRole('switch',{name:'IA agenda reuniões'})).toHaveAttribute('aria-checked','true');
+ await page.getByLabel('Duração da reunião').selectOption('45');await page.getByRole('button',{name:'Salvar alterações',exact:true}).click();await expect(page.getByRole('status').getByText('Alterações salvas.')).toBeVisible();
+ await page.reload();await expect(page.getByLabel('Duração da reunião')).toHaveValue('45');
+ await page.goto('/#meetings');await expect(page.getByText('Minha agenda Google')).toBeVisible();await expect(page.getByText('Na demonstração a agenda não é conectada',{exact:false})).toBeVisible();
+ await page.setViewportSize({width:390,height:844});expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);expect(errors).toEqual([]);
+});

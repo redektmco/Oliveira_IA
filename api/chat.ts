@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import {access,contactAccess} from '../server/access.js';
+import {applySalesAutomation,schedulingContext,syncDealAfterTurn,type SchedulingContext} from '../server/sales-automation.js';
 import { createClaude } from '../server/anthropic.js';
 import { executeChat } from '../server/chat.js';
 import { createRepository, serverConfig } from '../server/supabase.js';
@@ -34,6 +35,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       configuredModel: settings.configuredModel,
       dailyRequestLimit: settings.dailyRequestLimit,
       language:scope.settings.general.language,
+      automation:{
+        context:contact=>schedulingContext(scope.db,scope.ownerId,contact,scope.settings.scheduling,scope.settings.general.timezone),
+        apply:(contact,parsed,context)=>applySalesAutomation(scope.db,{owner:scope.ownerId,contact,triage:parsed.triage,meeting:parsed.meeting,reply:parsed.reply,scheduling:context as SchedulingContext|null,settings:scope.settings.scheduling}),
+        sync:(contact,triage,booked)=>syncDealAfterTurn(scope.db,scope.ownerId,contact,triage,booked,scope.settings.scheduling),
+      },
     });
     return res.status(200).json(answer);
   } catch (error) {

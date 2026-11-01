@@ -69,6 +69,12 @@ export default async function handler(req:VercelRequest,res:VercelResponse){
  }
  if(b.action==='billing')return res.status(200).json(await billing(a));
  if(b.action==='billing.portal'||b.action==='billing.checkout')return res.status(200).json(await billingAction(a,b.action,b.plan));
+ if(b.action==='calendar.status'){
+  const mine=await a.db.from('calendar_accounts').select('email,connected_at').eq('owner_id',a.ownerId).eq('member_id',a.user.id).maybeSingle();
+  const all=a.role==='seller'?{data:[]}:await a.db.from('calendar_accounts').select('member_id,email,connected_at').eq('owner_id',a.ownerId);
+  return res.status(200).json({configured:Boolean(process.env.GOOGLE_CLIENT_ID&&process.env.GOOGLE_CLIENT_SECRET&&process.env.INTEGRATION_ENCRYPTION_KEY),available:!mine.error,mine:mine.data||null,calendars:all.data||[],scheduling:a.settings.scheduling});
+ }
+ if(b.action==='calendar.disconnect'){const r=await a.db.from('calendar_accounts').delete().eq('owner_id',a.ownerId).eq('member_id',a.user.id);if(r.error)throw new HttpError(503,'Não foi possível desconectar a agenda.');await audit(a,'Desconectou o Google Calendar');return res.status(200).json({disconnected:true});}
  if(b.action==='integration.disconnect'){await disconnect(a,b.provider);await audit(a,`Desconectou ${b.provider}`);return res.status(200).json({disconnected:true});}
  if(b.action==='email.sync'){requireRole(a,['admin','manager']);const result=await syncGoogle(a.db,a.ownerId);await audit(a,'Sincronizou o e-mail');return res.status(200).json(result);}
  if(b.action==='email.domain'){requireRole(a,['admin','manager']);const account=await a.db.from('integration_accounts').select('label').eq('provider','google').eq('user_id',a.ownerId).maybeSingle();return res.status(200).json({records:await domainAuth(account.data?.label||'')});}

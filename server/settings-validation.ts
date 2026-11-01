@@ -31,5 +31,6 @@ export function validateSection(section:string,raw:unknown):Record<string,any>{
   if(![1,7,30].includes(out.sessionDays)||![0,3,6,12,24].includes(out.retentionMonths))throw new HttpError(400,'Período inválido.');
   if(out.allowedIps.some((rule:string)=>{const [ip,bits,...rest]=rule.split('/');return !isIP(ip)||rest.length>0||(bits!==undefined&&(isIP(ip)!==4||!/^\d{1,2}$/.test(bits)||Number(bits)>32));}))throw new HttpError(400,'Use IPs válidos ou intervalos IPv4/CIDR.');
  }
+ if(section==='scheduling'&&(![15,30,45,60,90].includes(out.duration)||!Number.isInteger(out.minNoticeHours)||out.minNoticeHours<0||out.minNoticeHours>72||!Number.isInteger(out.horizonDays)||out.horizonDays<1||out.horizonDays>30))throw new HttpError(400,'Confira duração (15 a 90 min), antecedência (0 a 72 h) e janela (1 a 30 dias).');
  return out;
 }

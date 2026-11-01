@@ -9,6 +9,8 @@ Primeira versão funcional do fluxo comercial do protótipo Felipa: React, TypeS
 - Triagem automática no Web e WhatsApp: resumo factual, próxima ação, score e quatro critérios com evidências (orçamento, necessidade, autoridade e prazo). A ficha atualiza durante o atendimento por IA.
 - Oportunidades com etapas do pipeline e indicadores calculados dos dados salvos.
 - Reuniões com horário, duração, histórico e exportação de calendário ICS.
+- Pipeline automático: cada lead que chega por um canal vira oportunidade em **Novo lead** e avança conforme a triagem da IA.
+- A IA oferece horários livres do SDR e marca a reunião quando o cliente confirma, com sincronização no Google Calendar do SDR e link do Meet. Veja [Agenda e pipeline](docs/WORKSPACE.md#agenda-e-pipeline-automáticos).
 - Agentes com identidade, instruções, modelo e pausa de atendimento.
 - Base de conhecimento em texto, com importação de `.txt` e `.md`.
 - Playground com chamada real ao Claude e consumo retornado pela API.
@@ -18,7 +20,7 @@ Primeira versão funcional do fluxo comercial do protótipo Felipa: React, TypeS
 - Fila persistida com deduplicação, recuperação automática e indicação de falha ou envio não confirmado.
 - Demonstração independente de credenciais, com dados locais claramente identificados e nenhuma resposta de IA simulada.
 
-Cada conta tem um workspace privado. Equipe compartilhada, múltiplas organizações, assinaturas/cobrança, automações de follow-up, Google Calendar e sincronização com CRM externo não fazem parte desta primeira versão. No WhatsApp, a IA atende textos de números autorizados; demais números, áudios e anexos ficam para atendimento humano. A IA pontua contatos automaticamente durante o atendimento; agendamentos continuam sob controle da equipe.
+Cada conta tem um workspace privado. Equipe compartilhada, múltiplas organizações, assinaturas/cobrança, automações de follow-up e sincronização com CRM externo não fazem parte desta primeira versão. No WhatsApp, a IA atende textos de números autorizados; demais números, áudios e anexos ficam para atendimento humano. A IA pontua contatos, cria/avança oportunidades e pode marcar reuniões nos horários livres do SDR.
 
 ## Desenvolvimento
 

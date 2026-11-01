@@ -9,10 +9,11 @@ import {parseTriageAnswer,triagePrompt} from './triage.js';
 import {dailyLimit,resolveModel,HttpError} from './validation.js';
 import {DeliveryError,ensureWhatsAppConnected,sendWhatsAppText} from './whatsapp-provider.js';
 import type {IncomingWhatsApp} from './whatsapp-events.js';
+import {applySalesAutomation,schedulingContext,syncDealAfterTurn} from './sales-automation.js';
 export type WhatsAppJob={id:string;user_id:string;instance:string;remote_jid:string;conversation_id:string;incoming_id:string;outgoing_id:string|null;kind:'inbound'|'human';body:string;reply:string|null;lease_token:string;attempts:number};
 export function bridgeDb(){return adminDb();}
 export async function bridgeRpc<T=unknown>(name:string,args:Record<string,unknown>={}){const r=await bridgeDb().rpc(name,args);if(r.error)throw new HttpError(503,'Não foi possível processar a fila WhatsApp.');return r.data as T;}
-export async function ingestWhatsApp(e:IncomingWhatsApp){return bridgeRpc<{queued?:boolean;duplicate?:boolean}>('whatsapp_ingest',{p_instance:e.instance,p_jid:e.jid,p_event_id:e.eventId,p_text:e.text,p_name:e.name,p_from_me:e.fromMe,p_needs_human:e.needsHuman,p_event_time:e.eventTime});}
+export async function ingestWhatsApp(e:IncomingWhatsApp){return bridgeRpc<{queued?:boolean;duplicate?:boolean;conversationId?:string}>('whatsapp_ingest',{p_instance:e.instance,p_jid:e.jid,p_event_id:e.eventId,p_text:e.text,p_name:e.name,p_from_me:e.fromMe,p_needs_human:e.needsHuman,p_event_time:e.eventTime});}
 export async function processWhatsAppJob(job:WhatsAppJob){
  const c=serverConfig(),repository=createRepository(c),db=bridgeDb();
  let deliveryStarted=false;
@@ -46,13 +47,16 @@ export async function processWhatsAppJob(job:WhatsAppJob){
    let completed=false;
    try{
     const knowledge=await repository.knowledge(job.user_id);
-    const answer=await createClaude(c.anthropicKey).answer({model,structured:true,system:buildSystemPrompt(agent,knowledge,preferences.general.language)+'\n\n'+triagePrompt(contact,contactHistory),messages:buildMessages(history.data.reverse().filter(m=>(m.role!=='user'||m.created_at<=current.data.created_at)&&!['canceled','failed','uncertain'].includes(m.delivery_status)).map(m=>({role:m.role==='user'?'user' as const:'assistant' as const,content:m.content})),job.body)});
+    const scheduling=await schedulingContext(db,job.user_id,contact,preferences.scheduling,preferences.general.timezone).catch(()=>null);
+    const answer=await createClaude(c.anthropicKey).answer({model,structured:true,system:buildSystemPrompt(agent,knowledge,preferences.general.language,Boolean(scheduling))+(scheduling?'\n\n'+scheduling.prompt:'')+'\n\n'+triagePrompt(contact,contactHistory),messages:buildMessages(history.data.reverse().filter(m=>(m.role!=='user'||m.created_at<=current.data.created_at)&&!['canceled','failed','uncertain'].includes(m.delivery_status)).map(m=>({role:m.role==='user'?'user' as const:'assistant' as const,content:m.content})),job.body)});
     if(!answer.text.trim())throw new HttpError(502,'Resposta vazia.');
     await repository.completeUsage(job.user_id,usageId,answer.usage);completed=true;
     const parsed=parseTriageAnswer(answer.text,agent.qualification_threshold);
-    const saved=await bridgeRpc<boolean>('whatsapp_save_triaged_reply',{p_id:job.id,p_lease:job.lease_token,p_contact_id:contact.id,p_expected_revision:contact.crm_revision ?? 0,p_reply:parsed.reply,p_triage:parsed.triage});
+    const automation=await applySalesAutomation(db,{owner:job.user_id,contact,triage:parsed.triage,meeting:parsed.meeting,reply:parsed.reply,scheduling,settings:preferences.scheduling});
+    const saved=await bridgeRpc<boolean>('whatsapp_save_triaged_reply',{p_id:job.id,p_lease:job.lease_token,p_contact_id:contact.id,p_expected_revision:contact.crm_revision ?? 0,p_reply:automation.reply,p_triage:parsed.triage});
     if(!saved)return;
-    job.reply=parsed.reply;
+    await syncDealAfterTurn(db,job.user_id,contact,parsed.triage,automation.booked,preferences.scheduling);
+    job.reply=automation.reply;
    }catch(e){if(!completed)await repository.failUsage(job.user_id,usageId).catch(()=>{});throw e;}
   }
   if(job.kind==='inbound'&&preferences.whatsapp.typingMax>0){const delay=preferences.whatsapp.typingMin+Math.random()*(preferences.whatsapp.typingMax-preferences.whatsapp.typingMin);await new Promise(resolve=>setTimeout(resolve,delay*1000));}
