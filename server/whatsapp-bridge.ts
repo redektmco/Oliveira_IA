@@ -52,7 +52,7 @@ export async function processWhatsAppJob(job:WhatsAppJob){
     const answer=await createClaude(c.anthropicKey).answer({model,structured:true,system:buildSystemPrompt(agent,knowledge,preferences.general.language,Boolean(scheduling))+(scheduling?'\n\n'+scheduling.prompt:'')+'\n\n'+triagePrompt(contact,contactHistory),messages:buildMessages(history.data.reverse().filter(m=>(m.role!=='user'||m.created_at<=current.data.created_at)&&!['canceled','failed','uncertain'].includes(m.delivery_status)).map(m=>({role:m.role==='user'?'user' as const:'assistant' as const,content:m.content})),job.body)});
     if(!answer.text.trim())throw new HttpError(502,'Resposta vazia.');
     await repository.completeUsage(job.user_id,usageId,answer.usage);completed=true;
-    const parsed=parseTriageAnswer(answer.text,agent.qualification_threshold);
+    const parsed=parseTriageAnswer(answer.text,agent.qualification_threshold,agent.criteria_weights);
     const automation=await applySalesAutomation(db,{owner:job.user_id,contact,triage:parsed.triage,meeting:parsed.meeting,reply:parsed.reply,scheduling,settings:preferences.scheduling});
     const saved=await bridgeRpc<boolean>('whatsapp_save_triaged_reply',{p_id:job.id,p_lease:job.lease_token,p_contact_id:contact.id,p_expected_revision:contact.crm_revision ?? 0,p_reply:automation.reply,p_triage:parsed.triage});
     if(!saved)return;

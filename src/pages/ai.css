@@ -10,3 +10,7 @@
 .modal .ai-channel-choice label{display:flex;flex-direction:row;align-items:flex-start;gap:var(--sp-3);margin:0}
 .modal .ai-channel-choice input[type=radio]{appearance:auto;width:16px;height:16px;min-height:16px;flex:0 0 16px;margin:2px 0 0;padding:0;border:0}
 .modal .ai-channel-choice label>span{display:block;flex:1;min-width:0}
+
+.ai-weights{border:0;margin:0;padding:0;display:grid;gap:var(--sp-2)}.ai-weights legend{font-size:var(--fs-sm);font-weight:500;color:var(--text-2);margin-bottom:var(--sp-1);padding:0}
+.ai-weight{display:grid;grid-template-columns:110px 1fr 44px;align-items:center;gap:var(--sp-3);font-size:var(--fs-sm)}.modal .ai-weight input[type=range]{accent-color:var(--brand);width:100%;padding:0;height:auto;min-height:0;border:0}.ai-weight b{text-align:right;font-variant-numeric:tabular-nums}
+.ai-weights small{color:var(--muted);font-size:var(--fs-xs);line-height:1.5}

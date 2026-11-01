@@ -6,7 +6,16 @@ export type Deal = { id: string; contact_id: string | null; title: string; value
 export type DealTask = { id: string; deal_id: string; title: string; due_at: string | null; done_at: string | null; assigned_to: string | null; created_at: string };
 export type DealNote = { id: string; deal_id: string; content: string; author?: string; created_at: string };
 export type DealEvent = { id: string; deal_id: string; kind: 'created' | 'stage' | 'value' | 'owner' | 'close_date'; detail: Record<string, any>; actor_id: string | null; created_at: string };
-export type Agent = { id: string; name: string; company: string; system_prompt: string; greeting: string; model: string; active: boolean; qualification_threshold: number; created_at: string };
+export type AgentTone = 'consultive' | 'friendly' | 'formal' | 'specialist';
+export type CriteriaWeights = { budget: number; need: number; authority: number; timing: number };
+export const agentTones: Record<AgentTone, { label: string; hint: string }> = {
+  consultive: { label: 'Consultivo', hint: 'Pergunta, entende e orienta' },
+  friendly: { label: 'Amigável', hint: 'Leve e próximo' },
+  formal: { label: 'Formal', hint: 'Direto e objetivo' },
+  specialist: { label: 'Especialista', hint: 'Técnico e preciso' },
+};
+export const defaultWeights: CriteriaWeights = { budget: 25, need: 25, authority: 25, timing: 25 };
+export type Agent = { id: string; name: string; company: string; system_prompt: string; greeting: string; model: string; active: boolean; qualification_threshold: number; created_at: string; tone?: AgentTone; criteria_weights?: CriteriaWeights };
 export type Knowledge = { id: string; title: string; content: string; created_at: string };
 export type Conversation = { id: string; contact_id: string | null; agent_id: string | null; channel: 'web' | 'whatsapp' | 'email' | 'instagram' | 'widget'; external_id?: string | null; status: 'ai' | 'human' | 'closed'; created_at: string };
 export type Message = { id: string; conversation_id: string; role: 'user' | 'assistant' | 'human'; content: string; delivery_status?: string; created_at: string };

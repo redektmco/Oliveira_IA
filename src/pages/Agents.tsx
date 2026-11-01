@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { useWorkspace } from '../lib/workspace';
-import type { Agent, RowInput } from '../lib/types';
+import { agentTones, defaultWeights, type Agent, type AgentTone, type CriteriaWeights, type RowInput } from '../lib/types';
 import './ai.css';
 
 const blankAgent = (): RowInput<'agents'> => ({
@@ -32,8 +32,13 @@ export default function Agents() {
       name: agent.name, company: agent.company, system_prompt: agent.system_prompt,
       greeting: agent.greeting, model: agent.model, active: agent.active,
       qualification_threshold: agent.qualification_threshold,
+      ...(agent.tone ? { tone: agent.tone, criteria_weights: agent.criteria_weights ?? defaultWeights } : {}),
     } : blankAgent());
   };
+
+  const weights: CriteriaWeights = { ...defaultWeights, ...(form.criteria_weights ?? {}) };
+  const weightTotal = weights.budget + weights.need + weights.authority + weights.timing;
+  const setWeight = (key: keyof CriteriaWeights, v: number) => setForm({ ...form, tone: form.tone ?? 'consultive', criteria_weights: { ...weights, [key]: Math.max(0, Math.min(100, Math.round(v || 0))) } });
 
   const save = async (event: FormEvent) => {
     event.preventDefault();
@@ -43,7 +48,11 @@ export default function Agents() {
     try {
       const value = { ...form, name: form.name.trim(), company: form.company.trim(), system_prompt: form.system_prompt.trim(), greeting: form.greeting.trim() };
       if (!value.name || !value.company || !value.system_prompt) throw new Error('Preencha nome, empresa e instruções do agente.');
+      if (weightTotal <= 0) throw new Error('Defina peso maior que zero em pelo menos um critério.');
       if (!Number.isInteger(value.qualification_threshold) || value.qualification_threshold < 0 || value.qualification_threshold > 100) throw new Error('O limite de qualificação precisa estar entre 0 e 100.');
+      // Agentes de contas sem a migração de tom/pesos continuam salvando como antes.
+      const customized = value.tone !== undefined && (value.tone !== 'consultive' || Object.values(weights).some((v, i) => v !== Object.values(defaultWeights)[i]) || (editing !== 'new' && editing.tone !== undefined));
+      if (!customized) { delete value.tone; delete value.criteria_weights; } else value.criteria_weights = weights;
       if (editing === 'new') await create('agents', value);
       else await update('agents', editing.id, value);
       setEditing(null);
@@ -85,6 +94,10 @@ export default function Agents() {
           <div className="ai-grid"><label className="ai-field">Nome do agente<input autoFocus required maxLength={120} value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} /></label><label className="ai-field">Empresa representada<input required maxLength={200} value={form.company} onChange={e => setForm({ ...form, company: e.target.value })} /></label></div>
           <label className="ai-field">Mensagem de apresentação<textarea maxLength={2000} rows={3} value={form.greeting} onChange={e => setForm({ ...form, greeting: e.target.value })} /><small>A apresentação orienta a IA e não é enviada automaticamente ao criar uma conversa.</small></label>
           <label className="ai-field">Instruções comerciais<textarea required maxLength={12000} rows={8} value={form.system_prompt} onChange={e => setForm({ ...form, system_prompt: e.target.value })} /><small>{form.system_prompt.length.toLocaleString('pt-BR')} / 12.000 caracteres. Descreva objetivos, tom de voz, critérios de qualificação e quando encaminhar para uma pessoa.</small></label>
+          <fieldset className="ai-channel-choice"><legend>Tom de voz</legend>{(Object.keys(agentTones) as AgentTone[]).map(key => <label key={key} className={(form.tone ?? 'consultive') === key ? 'selected' : ''}><input type="radio" name="tone" checked={(form.tone ?? 'consultive') === key} onChange={() => setForm({ ...form, tone: key, criteria_weights: weights })} /><span><b>{agentTones[key].label}</b><small>{agentTones[key].hint}</small></span></label>)}</fieldset>
+          <fieldset className="ai-weights"><legend>Peso de cada critério na nota</legend>
+            {([['budget', 'Orçamento'], ['need', 'Necessidade'], ['authority', 'Autoridade'], ['timing', 'Prazo']] as const).map(([key, label]) => <label key={key} className="ai-weight"><span>{label}</span><input type="range" min={0} max={100} step={5} value={weights[key]} onChange={e => setWeight(key, Number(e.target.value))} aria-label={`Peso de ${label}`} /><b>{weightTotal ? Math.round(weights[key] / weightTotal * 100) : 0}%</b></label>)}
+            <small>A nota do lead é a média ponderada dos quatro critérios. Os pesos são proporcionais: o que importa é a relação entre eles.</small></fieldset>
           <div className="ai-grid"><label className="ai-field">Modelo Claude<select value={form.model} onChange={e => setForm({ ...form, model: e.target.value })}><option value="claude-haiku-4-5-20251001">Haiku 4.5 — econômico</option><option value="claude-sonnet-4-6">Sonnet 4.6</option>{form.model === 'claude-haiku-4-5' && <option value="claude-haiku-4-5">Haiku 4.5 — alias</option>}</select></label><label className="ai-field">Limite de qualificação (0–100)<input type="number" min={0} max={100} step={1} required value={form.qualification_threshold} onChange={e => setForm({ ...form, qualification_threshold: Number(e.target.value) })} /><small>Referência para qualificação manual; não altera o score de contatos automaticamente.</small></label></div>
           <label className="ai-check"><input type="checkbox" checked={form.active} onChange={e => setForm({ ...form, active: e.target.checked })} /> Agente ativo para receber mensagens</label>
           <p className="ai-muted">A chave da Anthropic fica apenas no servidor. As conversas enviadas à IA podem conter dados dos seus contatos; use somente informações necessárias.</p>

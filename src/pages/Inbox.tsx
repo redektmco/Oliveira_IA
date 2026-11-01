@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { useWorkspace } from '../lib/workspace';
-import type { Conversation } from '../lib/types';
+import { stages, type Conversation, type DealStage } from '../lib/types';
 import { supabase } from '../lib/supabase';
 import './ai.css';
 
@@ -28,6 +28,20 @@ export default function Inbox() {
   const contact = data.contacts.find((item) => item.id === conversation?.contact_id);
   const agent = data.agents.find((item) => item.id === conversation?.agent_id);
   const messages = data.messages.filter((item) => item.conversation_id === selectedId).sort((a, b) => a.created_at.localeCompare(b.created_at));
+  // Eventos do funil e da agenda aparecem na linha do tempo da conversa, entre as mensagens.
+  const events = conversation ? [
+    ...data.deal_events.filter(e => data.deals.some(d => d.id === e.deal_id && d.contact_id === conversation.contact_id) && (e.kind === 'created' || e.kind === 'stage') && e.created_at >= conversation.created_at).map(e => {
+      const deal = data.deals.find(d => d.id === e.deal_id);
+      const to = (e.detail as { to?: DealStage }).to, from = (e.detail as { from?: DealStage }).from;
+      return { id: `d${e.id}`, at: e.created_at, icon: '↗', text: e.kind === 'created' ? `Oportunidade criada no funil${deal ? ` · ${deal.title}` : ''}` : `Oportunidade movida${from && to ? `: ${stages[from] ?? from} → ${stages[to] ?? to}` : ''}` };
+    }),
+    ...data.meetings.filter(m => m.contact_id === conversation.contact_id && m.created_at >= conversation.created_at).map(m => ({ id: `m${m.id}`, at: m.created_at, icon: '📅', text: `Reunião ${m.status === 'cancelled' ? 'cancelada' : 'agendada'}${m.source === 'ai' ? ' pela IA' : ''} · ${formatTime(m.starts_at)} · ${m.duration} min` })),
+  ] : [];
+  const timeline = [...messages.map(m => ({ kind: 'message' as const, at: m.created_at, message: m })), ...events.map(e => ({ kind: 'event' as const, at: e.at, event: e }))].sort((a, b) => a.at.localeCompare(b.at));
+  const firstQuestion = messages.find(m => m.role === 'user');
+  const firstAnswer = firstQuestion && messages.find(m => m.role === 'assistant' && m.created_at >= firstQuestion.created_at);
+  const answerSeconds = firstQuestion && firstAnswer ? Math.max(0, Math.round((new Date(firstAnswer.created_at).getTime() - new Date(firstQuestion.created_at).getTime()) / 1000)) : null;
+  const answerLabel = answerSeconds === null ? '' : answerSeconds < 60 ? `${answerSeconds}s` : answerSeconds < 3600 ? `${Math.round(answerSeconds / 60)} min` : `${Math.round(answerSeconds / 3600)} h`;
   const activeAgents = data.agents.filter((item) => item.active);
   const canCreate = data.contacts.length > 0;
   const chosenContact = data.contacts.find((item) => item.id === contactId);
@@ -148,11 +162,11 @@ export default function Inbox() {
     </aside>
     <section className="ai-inbox-chat" aria-label="Histórico da conversa">
       {!conversation ? <div className="ai-empty ai-inbox-welcome"><span className="ai-empty-symbol" aria-hidden="true">↗</span><h2>O atendimento começa aqui</h2><p>Selecione uma conversa ou crie um atendimento interno.</p><p className="ai-muted">Mensagens dos canais conectados aparecem aqui automaticamente quando a integração está ativa. Apenas números autorizados acionam a IA.</p>{error && <div className="ai-alert" role="alert">{error}</div>}</div> : <>
-        <div className="ai-inbox-heading"><button className="btn ai-inbox-back" aria-label="Voltar à lista" disabled={busy} onClick={() => select('')}>←</button><div><h2>{contact?.name ?? 'Contato removido'}</h2><span>{agent?.name ?? 'Agente removido'} · {({web:'Web interno',whatsapp:'WhatsApp',email:'E-mail',instagram:'Instagram',widget:'Widget do site'})[conversation.channel]}</span></div><span className={`badge badge-${conversation.status === 'ai' ? 'success' : conversation.status === 'human' ? 'warning' : 'neutral'}`}>{statusText[conversation.status]}</span></div>
+        <div className="ai-inbox-heading"><button className="btn ai-inbox-back" aria-label="Voltar à lista" disabled={busy} onClick={() => select('')}>←</button><div><h2>{contact?.name ?? 'Contato removido'}</h2><span>{agent?.name ?? 'Agente removido'} · {({web:'Web interno',whatsapp:'WhatsApp',email:'E-mail',instagram:'Instagram',widget:'Widget do site'})[conversation.channel]}</span></div>{answerLabel && <span className="badge badge-brand" title="Tempo entre a primeira mensagem do cliente e a primeira resposta da IA">⚡ 1ª resposta em {answerLabel}</span>}<span className={`badge badge-${conversation.status === 'ai' ? 'success' : conversation.status === 'human' ? 'warning' : 'neutral'}`}>{statusText[conversation.status]}</span></div>
         <div className="ai-inbox-controls"><p>{conversation.status === 'ai' ? (conversation.channel !== 'web' ? conversation.channel==='whatsapp'?'A Felipa responde aos números autorizados. Assuma para responder pessoalmente.':'Mensagens recebidas pelo canal conectado. Assuma para responder pessoalmente.' : 'As mensagens simulam um lead e recebem resposta da IA.') : conversation.status === 'human' ? (conversation.channel !== 'web' ? `Atendimento humano: suas respostas serão enviadas pelo canal ${conversation.channel}.` : 'Você assumiu o atendimento. Suas mensagens ficam registradas, sem resposta da IA.') : 'Conversa encerrada. Reabra para continuar o atendimento.'}</p><div className="ai-actions">{conversation.status !== 'human' && <button className="btn" onClick={() => changeStatus('human')} disabled={busy}>Assumir como humano</button>}{conversation.status !== 'ai' && <button className="btn" onClick={() => changeStatus('ai')} disabled={busy || !agent?.active}>Retomar IA</button>}{conversation.status !== 'closed' && <button className="btn" onClick={() => changeStatus('closed')} disabled={busy}>Encerrar</button>}<button className="btn btn-danger" onClick={deleteConversation} disabled={busy}>Excluir</button></div></div>
         <div className="ai-chat-messages" aria-live="polite" aria-busy={busy}>
           {messages.length === 0 && <div className="ai-empty"><h2>Conversa pronta</h2><p>Envie uma mensagem como cliente para validar o agente.</p></div>}
-          {messages.map((entry) => <div className={`ai-chat-bubble ${entry.role}`} key={entry.id}><span>{entry.role === 'user' ? contact?.name ?? 'Cliente' : entry.role === 'human' ? 'Você · Atendimento humano' : `${agent?.name ?? 'Agente'} · IA`}</span><p>{entry.content}</p><time dateTime={entry.created_at}>{formatTime(entry.created_at)}{entry.delivery_status && entry.delivery_status !== 'stored' && entry.delivery_status !== 'received' ? ` · ${{queued:'Na fila',sending:'Enviando',sent:'Enviado',delivered:'Entregue',read:'Lido',failed:'Falhou',uncertain:'Envio não confirmado — confira no canal',canceled:'Cancelado'}[entry.delivery_status] || entry.delivery_status}` : ''}</time></div>)}
+          {timeline.map((item) => item.kind === 'event' ? <div className="system-event" key={item.event.id} role="status"><span aria-hidden="true">{item.event.icon}</span> {item.event.text}</div> : (entry => <div className={`ai-chat-bubble ${entry.role}`} key={entry.id}><span>{entry.role === 'user' ? contact?.name ?? 'Cliente' : entry.role === 'human' ? 'Você · Atendimento humano' : `${agent?.name ?? 'Agente'} · IA`}</span><p>{entry.content}</p><time dateTime={entry.created_at}>{formatTime(entry.created_at)}{entry.delivery_status && entry.delivery_status !== 'stored' && entry.delivery_status !== 'received' ? ` · ${{queued:'Na fila',sending:'Enviando',sent:'Enviado',delivered:'Entregue',read:'Lido',failed:'Falhou',uncertain:'Envio não confirmado — confira no canal',canceled:'Cancelado'}[entry.delivery_status] || entry.delivery_status}` : ''}</time></div>)(item.message))}
           {busy && <div className="ai-chat-pending" role="status">Processando…</div>}
           <div ref={bottom} />
         </div>

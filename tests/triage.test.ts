@@ -47,3 +47,17 @@ test("invalid, incomplete and unbounded AI results are rejected", () => {
     assert.throws(() => parseTriageAnswer(JSON.stringify(input), 75));
   }
 });
+test("pesos do agente ponderam a nota; pesos inválidos voltam à média simples", () => {
+  const input = response();
+  input.triage.criteria.budget.score = 0;
+  const equal = parseTriageAnswer(JSON.stringify(input), 75);
+  assert.equal(equal.triage.score, 75);
+  // Orçamento com peso 100 e o resto 0: a nota segue só o orçamento.
+  const onlyBudget = parseTriageAnswer(JSON.stringify(input), 75, { budget: 100, need: 0, authority: 0, timing: 0 });
+  assert.equal(onlyBudget.triage.score, 0);
+  const heavy = parseTriageAnswer(JSON.stringify(input), 75, { budget: 10, need: 30, authority: 30, timing: 30 });
+  assert.equal(heavy.triage.score, 90);
+  for (const bad of [undefined, null, { budget: -1, need: 25, authority: 25, timing: 25 }, { budget: 0, need: 0, authority: 0, timing: 0 }, { budget: 25 }]) {
+    assert.equal(parseTriageAnswer(JSON.stringify(input), 75, bad).triage.score, 75);
+  }
+});

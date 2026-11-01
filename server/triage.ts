@@ -25,9 +25,23 @@ Use a ficha anterior como contexto, atualizando-a quando o cliente corrigir info
 ${JSON.stringify({ name: contact.name, company: contact.company, previous: contact.triage ?? null, recent_messages: recent })}`;
 }
 
+/** Pesos válidos (0–100, soma > 0); qualquer outra coisa volta ao padrão de pesos iguais. */
+export function normalizeWeights(input: unknown): Record<(typeof criteriaKeys)[number], number> {
+  const equal = { budget: 25, need: 25, authority: 25, timing: 25 };
+  if (!input || typeof input !== "object") return equal;
+  const out = {} as Record<(typeof criteriaKeys)[number], number>;
+  for (const key of criteriaKeys) {
+    const v = (input as Record<string, unknown>)[key];
+    if (typeof v !== "number" || !Number.isFinite(v) || v < 0 || v > 100) return equal;
+    out[key] = v;
+  }
+  return criteriaKeys.reduce((sum, key) => sum + out[key], 0) > 0 ? out : equal;
+}
+
 export function parseTriageAnswer(
   text: string,
   threshold: number,
+  weightsInput?: unknown,
 ): { reply: string; triage: Triage; meeting: string | null } {
   const invalid = () =>
     new HttpError(
@@ -69,8 +83,10 @@ export function parseTriageAnswer(
     };
   }
   // Missing evidence contributes zero; unknown criteria cannot accidentally qualify a lead.
+  const weights = normalizeWeights(weightsInput);
+  const total = criteriaKeys.reduce((sum, key) => sum + weights[key], 0);
   const score = Math.round(
-    criteriaKeys.reduce((sum, key) => sum + (criteria[key].score ?? 0), 0) / 4,
+    criteriaKeys.reduce((sum, key) => sum + (criteria[key].score ?? 0) * weights[key], 0) / total,
   );
   const complete = criteriaKeys.every((key) => criteria[key].score !== null);
   return {
