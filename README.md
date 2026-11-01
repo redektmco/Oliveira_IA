@@ -70,3 +70,7 @@ A implementação das dez telas adiciona equipe compartilhada com funções, con
 ## Oportunidades, login e design — implementação de 02/11/2026
 
 Ficha de oportunidade, revisão de login/segurança e padronização visual. Veja [o que falta para o MVP](docs/MVP.md). A migração `supabase/migrations/202611020005_opportunities.sql` (e a `202611010004_sales_automation.sql`, que estava pendente) foram aplicadas no projeto Felipa IA em 02/11/2026; confira com `SUPABASE_PROJECT_REF=mdzflolthybnzewhpxno npm run opportunities:check`. Os tamanhos de fonte, espaçamentos e controles vêm dos tokens em `src/index.css` e de `src/styles/system.css`; use-os em telas novas em vez de valores fixos.
+
+### Assinatura das mensagens no WhatsApp
+
+Mensagens enviadas pelo WhatsApp saem com o nome de quem envia em negrito: `*Felipe:* Bom dia` (primeiro nome da pessoa da equipe) e `*Felipa:* Olá!` (nome do agente de IA). Desative em **Configurações → WhatsApp → Assinar mensagens com o nome de quem envia**. O painel guarda o texto sem o prefixo. A assinatura das respostas da IA funciona sem migração. A das mensagens da equipe exige `supabase/migrations/202611030006_whatsapp_signature.sql`; enquanto ela não for aplicada, essas mensagens saem sem nome. Aplique com `SUPABASE_PROJECT_REF=mdzflolthybnzewhpxno npm run opportunities:migrate` e confira com `npm run opportunities:check`.

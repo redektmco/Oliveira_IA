@@ -3,9 +3,11 @@ import {type Access,contactAccess,text,uuid} from './access.js';
 import {HttpError,dailyLimit,resolveModel} from './validation.js';
 import {createRepository,serverConfig} from './supabase.js';
 import {createClaude} from './anthropic.js';
-import {backgroundWorker,bridgeRpc} from './whatsapp-bridge.js';
+import {backgroundWorker} from './whatsapp-bridge.js';
 import {runEmailJobs} from './automations.js';
 import {instagramSend,sendGoogleMail} from './providers.js';
+import {cleanSignature} from './whatsapp-signature.js';
+export {cleanSignature,signWhatsApp} from './whatsapp-signature.js';
 export async function contactSummary(a:Access,c:Record<string,any>){
  const conversations=await a.db.from('conversations').select('id').eq('user_id',a.ownerId).eq('contact_id',c.id);
  const ids=conversations.data?.map(c=>c.id)||[];if(!ids.length)throw new HttpError(409,'Este contato ainda não tem conversas para resumir.');
@@ -23,7 +25,7 @@ export async function sendChannelMessage(a:Access,b:Record<string,any>){
  uuid(b.conversationId);uuid(b.requestId);const message=text(b.text,4000,true),r=await a.db.from('conversations').select('*').eq('user_id',a.ownerId).eq('id',b.conversationId).single(),c=r.data;
  if(!c||c.status!=='human')throw new HttpError(409,'Assuma a conversa como humano antes de enviar.');if(c.contact_id)await contactAccess(a,c.contact_id);
  if(c.channel==='whatsapp'){
- const id=await bridgeRpc('whatsapp_enqueue_human',{p_user:a.ownerId,p_conversation:c.id,p_request:b.requestId,p_text:message});waitUntil(backgroundWorker());return {queued:true,id};
+ const queued=await rpcSigned(a.db,'whatsapp_enqueue_human',{p_user:a.ownerId,p_conversation:c.id,p_request:b.requestId,p_text:message},await attendantName(a));if(queued.error)throw new HttpError(503,'Não foi possível processar a fila WhatsApp.');const id=queued.data;waitUntil(backgroundWorker());return {queued:true,id};
  }
  if(c.channel==='email'){const contact=await contactAccess(a,c.contact_id);if(!contact.email)throw new HttpError(400,'O contato não tem e-mail.');const job=await a.db.rpc('workspace_enqueue_email',{p_owner:a.ownerId,p_conversation:c.id,p_request:b.requestId,p_text:message,p_payload:{to:contact.email,text:message,subject:text(b.subject||'Retorno do atendimento',200,true),threadId:c.external_id||undefined}});if(job.error)throw new HttpError(503,'Não foi possível enfileirar o e-mail.');waitUntil(runEmailJobs());return {queued:true,id:job.data};}
  // Claim a unique outgoing operation before the external call. Timeouts remain uncertain and are never resent automatically.
@@ -39,6 +41,20 @@ export async function sendChannelMessage(a:Access,b:Record<string,any>){
  const updated=await a.db.from('messages').update({delivery_status:'sent',...(providerId?{provider_message_id:providerId}:{})}).eq('id',saved.data.id).eq('user_id',a.ownerId);if(updated.error)throw new Error();return {sent:true};
  }catch(e){await a.db.from('messages').update({delivery_status:e instanceof HttpError&&e.status<500?'failed':'uncertain'}).eq('id',saved.data.id).eq('user_id',a.ownerId);throw e;}
 }
+/** Calls an RPC with p_signature; before migration 202611030006 the database lacks that parameter, so retry without it. */
+export async function rpcSigned(db:Access['db'],name:string,args:Record<string,unknown>,signature:string){
+ if(!signature)return db.rpc(name,args);
+ const signed=await db.rpc(name,{...args,p_signature:signature});
+ return signed.error&&['PGRST202','42883'].includes(String(signed.error.code))?db.rpc(name,args):signed;
+}
+/** First name of the attendant: workspace member name, then Auth profile name, then the e-mail. */
+export async function attendantName(a:Access){
+ if(!a.settings.whatsapp.signMessages)return '';
+ const member=a.user.id===a.ownerId?null:await a.db.from('workspace_members').select('name').eq('owner_id',a.ownerId).eq('user_id',a.user.id).maybeSingle();
+ const meta=a.user.user_metadata||{};
+ const full=String(member?.data?.name||meta.name||meta.full_name||'').trim()||String(a.user.email||'').split('@')[0].replace(/[._-]+/g,' ');
+ const first=full.split(/\s+/)[0]||'';return cleanSignature(first.charAt(0).toLocaleUpperCase('pt-BR')+first.slice(1));
+}
 /** Brazilian numbers without country code get 55; the result must be a valid WhatsApp JID. */
 export function whatsappJid(phone:string){
  let digits=String(phone||'').replace(/\D/g,'');if(digits.startsWith('00'))digits=digits.slice(2);
@@ -51,7 +67,7 @@ const startErrors:Record<string,[number,string]>={WHATSAPP_NOT_CONNECTED:[409,'O
 export async function startWhatsApp(a:Access,b:Record<string,any>){
  uuid(b.requestId);const message=text(b.text,4000,true),contact=await contactAccess(a,b.contactId),jid=whatsappJid(contact.phone);
  const instance=process.env.WHATSAPP_EVO_INSTANCE?.trim();if(!instance||!(process.env.WHATSAPP_EVO_TOKEN||process.env.WHATSAPP_TOKEN_EVO))throw new HttpError(503,'O WhatsApp ainda não foi configurado no servidor.');
- const r=await a.db.rpc('whatsapp_start_human',{p_user:a.ownerId,p_instance:instance,p_contact:contact.id,p_jid:jid,p_request:b.requestId,p_text:message});
+ const r=await rpcSigned(a.db,'whatsapp_start_human',{p_user:a.ownerId,p_instance:instance,p_contact:contact.id,p_jid:jid,p_request:b.requestId,p_text:message},await attendantName(a));
  if(r.error){const known=startErrors[r.error.message];if(known)throw new HttpError(known[0],known[1]);if(['42883','PGRST202'].includes(String(r.error.code)))throw new HttpError(503,'Aplique a migração 202611020005 no Supabase para iniciar conversas pelo WhatsApp.');throw new HttpError(503,'Não foi possível enfileirar a mensagem do WhatsApp.');}
  waitUntil(backgroundWorker());return {queued:true,...(r.data as {conversationId:string;jobId:string})};
 }

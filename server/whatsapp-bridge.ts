@@ -10,7 +10,8 @@ import {dailyLimit,resolveModel,HttpError} from './validation.js';
 import {DeliveryError,ensureWhatsAppConnected,sendWhatsAppText} from './whatsapp-provider.js';
 import type {IncomingWhatsApp} from './whatsapp-events.js';
 import {applySalesAutomation,schedulingContext,syncDealAfterTurn} from './sales-automation.js';
-export type WhatsAppJob={id:string;user_id:string;instance:string;remote_jid:string;conversation_id:string;incoming_id:string;outgoing_id:string|null;kind:'inbound'|'human';body:string;reply:string|null;lease_token:string;attempts:number};
+import {signWhatsApp} from './whatsapp-signature.js';
+export type WhatsAppJob={id:string;user_id:string;instance:string;remote_jid:string;conversation_id:string;incoming_id:string;outgoing_id:string|null;kind:'inbound'|'human';body:string;reply:string|null;lease_token:string;attempts:number;signature?:string};
 export function bridgeDb(){return adminDb();}
 export async function bridgeRpc<T=unknown>(name:string,args:Record<string,unknown>={}){const r=await bridgeDb().rpc(name,args);if(r.error)throw new HttpError(503,'Não foi possível processar a fila WhatsApp.');return r.data as T;}
 export async function ingestWhatsApp(e:IncomingWhatsApp){return bridgeRpc<{queued?:boolean;duplicate?:boolean;conversationId?:string}>('whatsapp_ingest',{p_instance:e.instance,p_jid:e.jid,p_event_id:e.eventId,p_text:e.text,p_name:e.name,p_from_me:e.fromMe,p_needs_human:e.needsHuman,p_event_time:e.eventTime});}
@@ -62,6 +63,13 @@ export async function processWhatsAppJob(job:WhatsAppJob){
   if(job.kind==='inbound'&&preferences.whatsapp.typingMax>0){const delay=preferences.whatsapp.typingMin+Math.random()*(preferences.whatsapp.typingMax-preferences.whatsapp.typingMin);await new Promise(resolve=>setTimeout(resolve,delay*1000));}
   // Check connectivity before entering the non-repeatable external send phase.
   await ensureWhatsAppConnected();
+  if(preferences.whatsapp.signMessages){
+   // The signed text is stored on the job first: the provider echo is matched against whatsapp_jobs.reply.
+   let name=job.kind==='human'?job.signature||'':'';
+   if(job.kind==='inbound'){const cv=await repository.conversation(job.user_id,job.conversation_id);const agent=cv?.agent_id?await repository.agent(job.user_id,cv.agent_id):null;name=agent?.name||'';}
+   const signed=signWhatsApp(name,job.reply!);
+   if(signed!==job.reply){const stored=await db.from('whatsapp_jobs').update({reply:signed,updated_at:new Date().toISOString()}).eq('id',job.id).eq('lease_token',job.lease_token).select('id');if(stored.error||!stored.data?.length)throw new HttpError(503,'Fila indisponível.');job.reply=signed;}
+  }
   const send=await bridgeRpc<boolean>('whatsapp_prepare_send',{p_id:job.id,p_lease:job.lease_token});
   if(!send)return;
   deliveryStarted=true;
