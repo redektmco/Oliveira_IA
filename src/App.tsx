@@ -15,6 +15,7 @@ import Knowledge from './pages/Knowledge';
 import Playground from './pages/Playground';
 import Inbox from './pages/Inbox';
 import Settings from './pages/Settings';
+import Workflows from './pages/Workflows';
 import { ThemeToggle } from './components/ThemeToggle';
 import './lib/theme';
 import './index.css';
@@ -24,7 +25,7 @@ import './app.css';
 import './styles/brand.css';
 
 const groups: {label: string; items: {id: string; label: string; icon: IconName}[]}[] = [
-  {label: 'OPERAÇÃO COMERCIAL', items: [{id:'overview',label:'Visão geral',icon:'grid'},{id:'inbox',label:'Caixa de entrada',icon:'message'},{id:'contacts',label:'Contatos / CRM',icon:'users'},{id:'pipeline',label:'Oportunidades',icon:'pipeline'},{id:'meetings',label:'Reuniões',icon:'calendar'}]},
+  {label: 'OPERAÇÃO COMERCIAL', items: [{id:'overview',label:'Visão geral',icon:'grid'},{id:'inbox',label:'Caixa de entrada',icon:'message'},{id:'contacts',label:'Contatos / CRM',icon:'users'},{id:'pipeline',label:'Oportunidades',icon:'pipeline'},{id:'meetings',label:'Reuniões',icon:'calendar'},{id:'workflows',label:'Automações',icon:'bolt'}]},
   {label: 'INTELIGÊNCIA ARTIFICIAL', items: [{id:'agents',label:'Agentes de IA',icon:'spark'},{id:'knowledge',label:'Base de conhecimento',icon:'book'},{id:'playground',label:'Playground',icon:'play'}]},
   {label: 'GESTÃO', items: [{id:'integrations',label:'Integrações',icon:'plug'},{id:'usage',label:'Uso da IA',icon:'chart'},{id:'settings',label:'Configurações',icon:'settings'}]},
 ];
@@ -82,7 +83,7 @@ function Shell({demo, user, onExit}: {demo: boolean; user: User | null; onExit: 
       {demo && <div className="demo-banner"><span><b>Demonstração</b> · Dados locais de exemplo. A IA e os canais externos não estão conectados.</span><button onClick={onExit}>Conectar minha conta →</button></div>}
       <main id="main-content" tabIndex={-1}>{error && <div className="error-banner" role="alert"><span>{error} {retryError}</span><Button disabled={loading} onClick={() => {setRetryError(''); refresh().catch(() => setRetryError('A conexão continua indisponível.'));}}>Tentar novamente</Button></div>}
         {loading && !error && <div role="status" className="loading-bar">Atualizando dados…</div>}
-        {page === 'overview' ? <Overview go={go} userName={user?.email ? user.email.split('@')[0].split(/[._-]+/)[0].replace(/^./, c => c.toUpperCase()) : undefined}/> : page === 'contacts' ? <Contacts search={query}/> : page === 'pipeline' ? <Pipeline/> : page === 'meetings' ? <Meetings/> : page === 'agents' ? <Agents/> : page === 'knowledge' ? <Knowledge/> : page === 'playground' ? <Playground/> : page === 'inbox' ? <Inbox/> : <Settings section={page}/>}
+        {page === 'overview' ? <Overview go={go} userName={user?.email ? user.email.split('@')[0].split(/[._-]+/)[0].replace(/^./, c => c.toUpperCase()) : undefined}/> : page === 'contacts' ? <Contacts search={query}/> : page === 'pipeline' ? <Pipeline/> : page === 'meetings' ? <Meetings/> : page === 'agents' ? <Agents/> : page === 'knowledge' ? <Knowledge/> : page === 'playground' ? <Playground/> : page === 'inbox' ? <Inbox/> : page === 'workflows' ? <Workflows routeId={contactId} go={go}/> : <Settings section={page}/>}
       </main>
     </div>{open && <button className="sidebar-backdrop" aria-label="Fechar menu" onClick={() => setOpen(false)}/>}
   </div>;

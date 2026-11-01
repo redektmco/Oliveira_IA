@@ -18,6 +18,7 @@ const suggestions: { label: string; icon: IconName; prompt: string; send?: boole
   { label: 'Nova oportunidade', icon: 'pipeline', prompt: 'Crie uma oportunidade para ' },
   { label: 'Agendar reunião', icon: 'calendar', prompt: 'Agende uma reunião com ' },
   { label: 'Mandar WhatsApp', icon: 'whatsapp', prompt: 'Mande uma mensagem no WhatsApp para ' },
+  { label: 'Criar automação', icon: 'bolt', prompt: 'Crie uma automação: quando ' },
 ];
 
 const kindIcon: Record<AssistantCard['kind'], IconName> = { read: 'search', create: 'plus', update: 'edit', send: 'send' };
@@ -90,6 +91,10 @@ export default function Overview({ go, userName }: { go?: (page: string) => void
     try { const result = await api<{ available: boolean; threads: AssistantThread[] }>('assistant.threads'); setThreads(result.threads); setHistoryOn(result.available); } catch { /* History is optional; the chat still works. */ }
   }, [api, demo, role]);
   useEffect(() => { void loadThreads(); }, [loadThreads]);
+  // "Pedir ao assistente" em outras telas (ex.: Automações) deixa um rascunho para o campo de mensagem.
+  useEffect(() => {
+    try { const pending = sessionStorage.getItem('oliveira-assistant-draft'); if (pending) { sessionStorage.removeItem('oliveira-assistant-draft'); setDraft(pending); requestAnimationFrame(() => { const field = input.current; if (field) { field.focus(); field.setSelectionRange(pending.length, pending.length); } }); } } catch { /* optional */ }
+  }, []);
 
   useEffect(() => { if (chatting) bottom.current?.scrollIntoView({ behavior: 'smooth', block: 'end' }); }, [turns, pending, error, chatting]);
   useEffect(() => { if (!chatting) input.current?.focus(); }, [chatting]);
@@ -163,7 +168,7 @@ export default function Overview({ go, userName }: { go?: (page: string) => void
       onChange={event => setDraft(event.target.value)}
       onKeyDown={event => { if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); send(); } }} />
     <div className="home-composer-bar">
-      <span className="home-composer-note"><Icon name="spark" size={13} />Claude · acessa seus contatos, oportunidades, reuniões e conversas</span>
+      <span className="home-composer-note"><Icon name="spark" size={13} />Claude · acessa contatos, oportunidades, reuniões, conversas e automações</span>
       <button type="submit" className="home-send" disabled={Boolean(blocked) || pending || !draft.trim()} aria-label="Enviar" title="Enviar"><Icon name="arrow" size={15} /></button>
     </div>
   </form>;

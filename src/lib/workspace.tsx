@@ -4,6 +4,7 @@ import {setAuthNotice} from './auth-notice';
 import {deleteDemoRow,loadDemo,saveDemo} from './demo';
 import {emptyState,type DatabaseState,type EditableTable,type RowInput,type Tables} from './types';
 import {defaultSettings,mergeSettings,type WorkspaceSettings,type WorkspaceRole} from './settings-types';
+import type {Workflow} from './workflow-types';
 export type ChatRequest={agentId:string;conversationId?:string;message:string;history?:{role:'user'|'assistant';content:string}[]};
 export type ChatResult={text:string;usage:{input_tokens:number;output_tokens:number};conversationId?:string};
 type WorkspaceInfo={id:string;name:string;role:WorkspaceRole};
@@ -25,6 +26,20 @@ function demoDealEvents(data:DatabaseState,before:Tables['deals']|undefined,patc
  const deals=data.deals.map(d=>d.id!==before.id?d:{...d,updated_at:now,...(patch.stage!==undefined&&patch.stage!==before.stage?{stage_changed_at:now,closed_at:['won','lost'].includes(patch.stage)?now:null}:{})});
  return {...data,deals,deal_events:[...data.deal_events,...events]};
 }
+/** Demonstração: automações ficam no navegador e nunca executam ações. */
+function demoWorkflows(action:string,input:Record<string,unknown>){
+ const key='oliveira-workflows-demo-v1';let list:Workflow[]=[];try{list=JSON.parse(localStorage.getItem(key)||'[]');}catch{}
+ const persist=()=>{try{localStorage.setItem(key,JSON.stringify(list));}catch{throw new Error('O navegador não permitiu salvar a automação.');}};
+ const find=(id=input.id)=>{const w=list.find(x=>x.id===id);if(!w)throw new Error('Automação não encontrada.');return w;};
+ if(action==='workflows.list')return {available:true,workflows:list,runs:[]};
+ if(action==='workflows.get')return {workflow:find(),runs:[]};
+ if(action==='workflows.save'){const v=input.workflow as Workflow,now=new Date().toISOString();if(!v?.name?.trim())throw new Error('Nome da automação: preencha este campo.');
+  if(v.id){const w=find(v.id);Object.assign(w,{name:v.name,description:v.description,trigger:v.trigger,steps:v.steps,updated_at:now});persist();return {workflow:w};}
+  const w:Workflow={...v,id:crypto.randomUUID(),status:'draft',created_via:'panel',run_count:0,last_run_at:null,created_at:now,updated_at:now};list.unshift(w);persist();return {workflow:w};}
+ if(action==='workflows.status'){const w=find();if(input.status==='active')throw new Error('Na demonstração as automações não são ativadas. Entre com sua conta.');w.status=input.status as Workflow['status'];persist();return {workflow:w};}
+ if(action==='workflows.delete'){list=list.filter(x=>x.id!==input.id);persist();return {deleted:true};}
+ throw new Error('Na demonstração as automações não executam ações. Entre com sua conta.');
+}
 export function useWorkspace(){const value=useContext(Context);if(!value)throw new Error('Workspace indisponível.');return value;}
 export function WorkspaceProvider({demo,userId,children}:{demo:boolean;userId:string|null;children:ReactNode}){
  const [data,setData]=useState<DatabaseState>(()=>demo?loadDemo():emptyState()),dataRef=useRef(data);
@@ -44,6 +59,7 @@ export function WorkspaceProvider({demo,userId,children}:{demo:boolean;userId:st
    if(action==='security.list')return {sessions:[],audit:[],ip:''}as T;
    if(action==='billing')return {configured:false,plans:[],invoices:[],subscription:null}as T;
    if(action==='calendar.status')return {configured:false,available:true,mine:null,calendars:[],scheduling:settings.scheduling}as T;
+   if(action.startsWith('workflows.'))return demoWorkflows(action,input) as T;
    throw new Error('Entre em sua conta para usar esta funcionalidade com dados reais.');
   }
   const session=await supabase?.auth.getSession(),token=session?.data.session?.access_token;if(!token)throw new Error('Sua sessão expirou. Entre novamente.');

@@ -18,6 +18,8 @@ O canal `whatsapp` é alimentado pelo webhook Evolution. `whatsapp_channels` fix
 
 Após configurar o segredo `felipa_whatsapp_worker` no Supabase Vault, aplique `whatsapp-scheduler.sql` para criar `pg_cron`, `pg_net` e o job de recuperação a cada minuto. O arquivo contém a URL da produção atual; ajuste se o domínio mudar. O token deve coincidir com `WHATSAPP_WORKER_SECRET` da Vercel. Não salve seu valor no SQL versionado. Veja [a operação WhatsApp](../docs/WHATSAPP.md).
 
+`workflows-scheduler.sql` agenda (pg_cron, a cada minuto) a fila das automações criadas pela migração `202611050008_workflows.sql`. Só chama `/api/whatsapp-worker?workflows=1` quando há eventos, execuções vencidas ou automações agendadas ativas, e reutiliza o mesmo segredo do Vault.
+
 ## Verificação
 
 `tests/security.sql` pode ser executado como `postgres` após a migração em um projeto descartável. Ele cria duas contas de teste em uma transação e termina com `rollback`, validando RLS, isolamento entre donos, referências cruzadas, bloqueio de gravações de uso pelo cliente, cota diária, ordem de mensagens, intervenção humana e exclusão em cascata. Não rode testes de infraestrutura em um projeto de produção.
