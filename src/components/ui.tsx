@@ -27,7 +27,16 @@ export type IconName =
   | "filter"
   | "arrow"
   | "clock"
-  | "close";
+  | "close"
+  | "globe"
+  | "user"
+  | "download"
+  | "link"
+  | "info"
+  | "edit"
+  | "trash"
+  | "chevronLeft"
+  | "whatsapp";
 
 const paths: Record<IconName, ReactNode> = {
   grid: <><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" /></>,
@@ -58,6 +67,15 @@ const paths: Record<IconName, ReactNode> = {
   arrow: <><path d="M5 12h14M14 7l5 5-5 5" /></>,
   clock: <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>,
   close: <path d="M6 6l12 12M18 6 6 18" />,
+  globe: <><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18" /></>,
+  user: <><circle cx="12" cy="8" r="4" /><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1" /></>,
+  download: <><path d="M12 3v12M7 10l5 5 5-5M4 20h16" /></>,
+  link: <><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1" /></>,
+  info: <><circle cx="12" cy="12" r="9" /><path d="M12 11v5M12 8h.01" /></>,
+  edit: <><path d="M4 20l1-4L16.5 4.5a2.1 2.1 0 0 1 3 3L8 19z" /><path d="m14 7 3 3" /></>,
+  trash: <><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" /></>,
+  chevronLeft: <path d="m15 18-6-6 6-6" />,
+  whatsapp: <path d="M3 21l1.6-4.6A9 9 0 1 1 8 19.6z" />,
 };
 
 export function Icon({ name, size = 18 }: { name: IconName; size?: number }) {

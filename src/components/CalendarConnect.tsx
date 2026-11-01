@@ -17,7 +17,7 @@ export default function CalendarConnect(){
   <div className="calendar-connect-main">
    <span className="channel-mark google" aria-hidden="true">G</span>
    <div>
-    <b>Minha agenda Google {status&&<Badge tone={connected?'success':'neutral'}>{connected?'Conectada':'Não conectada'}</Badge>}</b>
+    <b>Minha agenda Google {status&&<Badge tone={connected?'success':'warning'}>{connected?'Conectada':'Não conectada'}</Badge>}</b>
     <p>{demo?'Na demonstração a agenda não é conectada. Entre na sua conta para a IA marcar reuniões na agenda do SDR.'
      :connected?`${status!.mine!.email} · A IA oferece seus horários livres e cria o evento${status!.scheduling.aiBooking?'':' (agendamento pela IA desativado em Configurações → Agenda e pipeline)'}.`
      :status&&!status.available?'Aplique a migração 202611010004 no Supabase para conectar agendas.'

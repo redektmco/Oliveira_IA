@@ -36,7 +36,7 @@ test('contato, oportunidade e mudança de etapa persistem no modo local', async 
   page.on('pageerror', error => errors.push(error.message));
   await enterDemo(page);
   await navigate(page, 'Contatos / CRM');
-  await page.getByRole('button', {name:'+ Novo contato', exact:true}).click();
+  await page.getByRole('button', {name:'Novo contato', exact:true}).click();
   const dialog = page.getByRole('dialog', {name:'Novo contato'});
   await dialog.getByLabel('Nome *', {exact:true}).fill('Lead de teste E2E');
   await dialog.getByLabel('Empresa', {exact:true}).fill('Empresa E2E');
@@ -105,7 +105,7 @@ test('agente e conhecimento salvos não simulam respostas do Claude', async ({pa
 test('reuniões permitem edição, exportação ICS e exclusão', async ({page}) => {
   await enterDemo(page);
   await navigate(page, 'Reuniões');
-  await page.getByRole('button', {name:'+ Agendar reunião',exact:true}).click();
+  await page.getByRole('button', {name:'Agendar reunião',exact:true}).click();
   await page.getByRole('dialog').getByLabel('Título *', {exact:true}).fill('Diagnóstico E2E');
   await page.getByRole('dialog').getByLabel('Local ou link da reunião').fill('Escritório');
   await page.getByRole('dialog').getByRole('button', {name:'Salvar reunião'}).click();
