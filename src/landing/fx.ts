@@ -4,7 +4,7 @@ const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matc
 const fine = () => window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 const clamp = (v: number, a = 0, b = 1) => Math.min(b, Math.max(a, v));
 
-export type Fx = { scrollTo: (target: string | number) => void; destroy: () => void };
+export type Fx = { scrollTo: (target: string | number) => void; lock: (on: boolean) => void; destroy: () => void };
 
 /** Motion engine da landing: scroll suave, reveals, parallax, cursor, botões magnéticos, contadores. */
 export function startFx(root: HTMLElement): Fx {
@@ -30,7 +30,7 @@ export function startFx(root: HTMLElement): Fx {
         io.unobserve(e.target);
       }
     }
-  }, { threshold: 0.18, rootMargin: '0px 0px -6% 0px' });
+  }, { threshold: 0.12, rootMargin: '0px 0px -6% 0px' });
   root.querySelectorAll('[data-reveal],[data-count]').forEach((el) => io.observe(el));
   cleanups.push(() => io.disconnect());
 
@@ -114,7 +114,7 @@ export function startFx(root: HTMLElement): Fx {
         const half = inner.scrollWidth / 2;
         if (half > 0) { if (pos <= -half) pos += half; if (pos > 0) pos -= half; }
         marqueePos.set(el, pos);
-        inner.style.transform = `translate3d(${pos.toFixed(1)}px,0,0)`;
+        inner.style.translate = `${pos.toFixed(1)}px 0`;
       }
       root.style.setProperty('--skew', `${clamp(velocity * -0.12, -4, 4).toFixed(2)}deg`);
     }
@@ -183,6 +183,7 @@ export function startFx(root: HTMLElement): Fx {
   }
 
   return {
+    lock: (on) => { if (on) lenis?.stop(); else lenis?.start(); },
     scrollTo: (target) => {
       if (lenis) lenis.scrollTo(target as never, { offset: -70, duration: 1.4 });
       else if (typeof target === 'string') document.querySelector(target)?.scrollIntoView({ behavior: 'auto' });

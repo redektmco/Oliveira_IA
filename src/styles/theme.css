@@ -1,0 +1,55 @@
+/*
+ * Tema claro/escuro global. O atributo data-theme fica em <html> (src/lib/theme.ts).
+ * Páginas usam só os tokens abaixo; nada de cor fixa para superfícies, bordas e textos.
+ */
+:root {
+  --surface-3: #f4f4f5; --text-2: #3f3f46; --border-soft: #f1f1f3;
+  --brand-soft-2: #ffe4e6; --brand-line: #fecdd3; --brand-ink: #be123c;
+  --success-line: #bbf7d0; --success-ink: #15803d;
+  --danger-line: #fecaca; --danger-ink: #b91c1c;
+  --warning-line: #fde68a; --warning-ink: #b45309;
+  --info-line: #bfdbfe; --info-ink: #1d4ed8;
+  --violet-soft: #faf5ff; --orange-soft: #fff7ed;
+  --topbar-bg: rgba(255,255,255,.92); --overlay: rgba(9,9,11,.35);
+  /* Sidebar */
+  --sb-bg: #ffffff; --sb-border: #e4e4e7; --sb-border-2: #e4e4e7; --sb-raised: #f4f4f5;
+  --sb-text: #3f3f46; --sb-text-2: #52525b; --sb-strong: #18181b; --sb-muted: #71717a; --sb-label: #a1a1aa;
+  --sb-hover: #f4f4f5; --sb-active: #ffe4e6; --sb-accent: #e11d48; --sb-avatar: #e4e4e7; --sb-avatar-ink: #18181b;
+  --sidebar: var(--sb-bg);
+}
+:root[data-theme='dark'] {
+  --bg: #0d0d0e; --surface: #151516; --surface-2: #1b1b1d; --surface-3: #232326;
+  --text: #f4f4f5; --text-2: #c4c4c9; --muted: #8b8b93; --muted-2: #6b6b73;
+  --border: #26262a; --border-strong: #38383d; --border-soft: #202023;
+  --brand-soft: rgba(225,29,72,.14); --brand-soft-2: rgba(225,29,72,.22); --brand-line: rgba(225,29,72,.38); --brand-ink: #fb7185;
+  --success-soft: rgba(34,197,94,.12); --success-line: rgba(34,197,94,.32); --success-ink: #4ade80;
+  --danger-soft: rgba(239,68,68,.13); --danger-line: rgba(239,68,68,.34); --danger-ink: #f87171;
+  --warning-soft: rgba(245,158,11,.13); --warning-line: rgba(245,158,11,.34); --warning-ink: #fbbf24;
+  --info-soft: rgba(59,130,246,.14); --info-line: rgba(59,130,246,.34); --info-ink: #60a5fa;
+  --violet-soft: rgba(124,58,237,.18); --orange-soft: rgba(249,115,22,.14);
+  --shadow: 0 1px 2px rgba(0,0,0,.4); --topbar-bg: rgba(13,13,14,.88); --overlay: rgba(0,0,0,.6);
+  --sb-bg: #111113; --sb-border: #26262a; --sb-border-2: #35353a; --sb-raised: #1b1b1d;
+  --sb-text: #d4d4d8; --sb-text-2: #a1a1aa; --sb-strong: #f4f4f5; --sb-muted: #71717a; --sb-label: #66666f;
+  --sb-hover: #1d1d20; --sb-active: #28282c; --sb-accent: #fb7185; --sb-avatar: #3f3f46; --sb-avatar-ink: #ffffff;
+}
+body { background: var(--bg); color: var(--text); }
+:root[data-theme='dark'] .top-avatar { background: #3f3f46; }
+:root[data-theme='dark'] .dot.dark { background: #d4d4d8; }
+:root[data-theme='dark'] .line-primary { stroke: var(--brand); }
+:root[data-theme='dark'] .line-secondary { stroke: #a1a1aa; }
+:root[data-theme='dark'] .donut { background: conic-gradient(var(--brand) 0 42%,#d4d4d8 42% 66%,#3b82f6 66% 83%,#f59e0b 83% 93%,#52525b 93%); }
+:root[data-theme='dark'] .tone-0 { background: var(--danger-soft)!important; color: var(--danger-ink)!important; }
+:root[data-theme='dark'] .tone-1 { background: var(--info-soft)!important; color: var(--info-ink)!important; }
+:root[data-theme='dark'] .tone-2 { background: var(--success-soft)!important; color: var(--success-ink)!important; }
+:root[data-theme='dark'] .tone-3 { background: var(--violet-soft)!important; color: #c4b5fd!important; }
+:root[data-theme='dark'] .tone-4 { background: var(--orange-soft)!important; color: #fdba74!important; }
+:root[data-theme='dark'] .tone-gray { --tone: #a1a1aa; --tone-soft: var(--surface-3); }
+:root[data-theme='dark'] .tone-blue { --tone: #60a5fa; --tone-soft: var(--info-soft); }
+:root[data-theme='dark'] .tone-violet { --tone: #a78bfa; --tone-soft: var(--violet-soft); }
+:root[data-theme='dark'] .tone-amber { --tone: #fbbf24; --tone-soft: var(--warning-soft); }
+:root[data-theme='dark'] .tone-teal { --tone: #2dd4bf; --tone-soft: rgba(20,184,166,.14); }
+:root[data-theme='dark'] .tone-green { --tone: #4ade80; --tone-soft: var(--success-soft); }
+:root[data-theme='dark'] .tone-red { --tone: #f87171; --tone-soft: var(--danger-soft); }
+:root[data-theme='dark'] ::placeholder { color: var(--muted-2); }
+:root[data-theme='dark'] .btn:hover { background: var(--surface-3); }
+:root[data-theme='dark'] .btn-primary:hover { background: #be123c; }
