@@ -76,7 +76,7 @@ function Shell({demo, user, onExit}: {demo: boolean; user: User | null; onExit: 
       {demo && <div className="demo-banner"><span><b>Demonstração</b> · Dados locais de exemplo. A IA e os canais externos não estão conectados.</span><button onClick={onExit}>Conectar minha conta →</button></div>}
       <main id="main-content" tabIndex={-1}>{error && <div className="error-banner" role="alert"><span>{error} {retryError}</span><Button disabled={loading} onClick={() => {setRetryError(''); refresh().catch(() => setRetryError('A conexão continua indisponível.'));}}>Tentar novamente</Button></div>}
         {loading && !error && <div role="status" className="loading-bar">Atualizando dados…</div>}
-        {page === 'overview' ? <Overview go={go}/> : page === 'contacts' ? <Contacts search={query}/> : page === 'pipeline' ? <Pipeline/> : page === 'meetings' ? <Meetings/> : page === 'agents' ? <Agents/> : page === 'knowledge' ? <Knowledge/> : page === 'playground' ? <Playground/> : page === 'inbox' ? <Inbox/> : <Settings section={page}/>}
+        {page === 'overview' ? <Overview go={go} userName={user?.email ? user.email.split('@')[0].split(/[._-]+/)[0].replace(/^./, c => c.toUpperCase()) : undefined}/> : page === 'contacts' ? <Contacts search={query}/> : page === 'pipeline' ? <Pipeline/> : page === 'meetings' ? <Meetings/> : page === 'agents' ? <Agents/> : page === 'knowledge' ? <Knowledge/> : page === 'playground' ? <Playground/> : page === 'inbox' ? <Inbox/> : <Settings section={page}/>}
       </main>
     </div>{open && <button className="sidebar-backdrop" aria-label="Fechar menu" onClick={() => setOpen(false)}/>}
   </div>;
