@@ -89,6 +89,20 @@ Ativação:
 
 Os testes `tests/sales-automation.test.ts` cobrem etapas, horários livres, reservas idempotentes, recusa de horários fora da lista, dupla reserva e a migração em PGlite. A chamada real à API Google depende das credenciais acima e não foi validada neste ambiente.
 
+## Assistente de IA (tela inicial)
+
+Implementado em 04/11/2026. A **Visão geral** é uma conversa com o Claude, no formato de busca/chat: campo central com sugestões e, ao enviar a primeira mensagem, a tela vira a conversa. As conversas ficam no **Histórico**.
+
+- **O que a IA faz sozinha.** Lê o workspace (resumo, contatos, oportunidades, tarefas, reuniões, caixa de entrada) e executa, sem pedir confirmação: criar e editar contatos, criar e editar oportunidades (etapa, valor, previsão), notas, tarefas, reuniões no painel e **enviar WhatsApp**. Cada ação aparece como cartão no chat, com link para o registro; falhas aparecem em vermelho com o motivo.
+- **O que ela não faz.** Não existe ferramenta de exclusão (contatos, oportunidades, conversas). Não cria evento no Google Calendar: a reunião fica no painel.
+- **WhatsApp.** O envio usa a mesma fila de `whatsapp.start` (contato precisa de telefone válido), com o nome de quem está logado na assinatura. Máximo de 5 envios por pedido; o prompt só permite enviar quando a pessoa pede explicitamente. Fila aceita não prova entrega ou leitura.
+- **Escopo e segurança.** Roda em `/api/workspace` (`assistant.chat`, `assistant.threads`, `assistant.thread`, `assistant.delete`), sempre com o escopo do workspace autenticado e as mesmas validações do painel (`writeData`). Vendedores não usam o assistente (usam a IA nas conversas atribuídas). Conteúdo de clientes é tratado como dado, não instrução. Cada escrita entra na auditoria como "Assistente de IA: …". Cada pedido conta como uma chamada no limite diário (`AI_DAILY_REQUEST_LIMIT`), mesmo com vários passos de ferramenta (máx. 8, cerca de 38 s).
+- **Modelo.** `ANTHROPIC_MODEL` (padrão Haiku 4.5; Sonnet 4.6 também é aceito). Para pedidos com vários passos, Sonnet 4.6 tende a acertar mais.
+- **Histórico.** Exige `supabase/migrations/202611040007_assistant.sql` (tabelas `assistant_threads` e `assistant_messages`, RLS forçada, só o servidor acessa). Aplique no SQL Editor do Supabase; é aditiva e repetível. Sem ela, o chat funciona normalmente, mas a conversa não é salva e a tela avisa. Cada pessoa vê apenas as próprias conversas.
+- **Demonstração.** O modo demonstração não chama a IA e mostra o campo desativado.
+
+Validação local: testes em `tests/assistant.test.ts` (laço de ferramentas com modelo simulado, isolamento por workspace, fuso das reuniões, limite de envios, ausência de exclusão e a migração em PGlite) e a navegação em Chromium com respostas simuladas para conferir o layout. Uma chamada real à API Anthropic e um envio real de WhatsApp pelo assistente **não foram validados neste ambiente**: dependem das chaves e da Evolution em produção.
+
 ## Privacidade, arquivos e validação
 
 Arquivos de até 2 MB ficam no bucket privado `crm-files`, com download autorizado por link de 60 segundos. Links de documentos existentes continuam disponíveis. A exportação de titular inclui cadastro, mensagens, notas, agenda, oportunidades e metadados de arquivos; a exclusão remove os arquivos privados e registros vinculados. Documentos em serviços externos precisam ser excluídos no serviço de origem.
