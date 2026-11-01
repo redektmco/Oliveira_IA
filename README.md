@@ -47,6 +47,10 @@ Os testes de backend usam dependências externas simuladas. Os testes SQL execut
 
 `npm run preview` serve apenas o build estático para inspeção; não inicia a API. Para testar a aplicação completa localmente, use `npm run dev`.
 
+## Demonstração guiada e design
+
+`/demo` é uma apresentação roteirizada para a equipe comercial usar em reunião (sem login, sem API, sem tempo de processamento), com painel da apresentadora em `/demo/apresentador`. Veja [docs/DEMO.md](docs/DEMO.md). O app inteiro usa o mesmo design system da landing page (tokens em `src/styles/brand.css`: tinta, papel, vermelho, Bricolage Grotesque + Inter, botões em pílula).
+
 ## Hospedagem
 
 O projeto está preparado para **Vercel**, incluindo build, funções e roteamento. Siga [o guia de implantação](docs/DEPLOY.md), [o contrato do backend](docs/backend.md) e [a migração do banco](supabase/README.md).

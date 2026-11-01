@@ -21,6 +21,7 @@ import './index.css';
 import './styles/system.css';
 import './styles/theme.css';
 import './app.css';
+import './styles/brand.css';
 
 const groups: {label: string; items: {id: string; label: string; icon: IconName}[]}[] = [
   {label: 'OPERAÇÃO COMERCIAL', items: [{id:'overview',label:'Visão geral',icon:'grid'},{id:'inbox',label:'Caixa de entrada',icon:'message'},{id:'contacts',label:'Contatos / CRM',icon:'users'},{id:'pipeline',label:'Oportunidades',icon:'pipeline'},{id:'meetings',label:'Reuniões',icon:'calendar'}]},

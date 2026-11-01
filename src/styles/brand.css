@@ -1,0 +1,163 @@
+/*
+ * Identidade V4 Oliveira & Co — mesmo design system da landing page (src/landing/landing.css).
+ * Carregado por último: troca tokens (cores, raios, sombras, fontes) e o acabamento dos controles.
+ * Telas continuam usando só var(--*); densidade do CRM (tamanhos de fonte e alturas) vem de system.css.
+ *
+ * Tokens da LP: tinta #0B0B0C · papel #F6F5F2 · vermelho #E11D48 · cinza #5C5C63 · card #151517
+ * Tipografia: Bricolage Grotesque (títulos e números) + Inter (texto) · botões em pílula · raios generosos.
+ */
+:root {
+  --ink: #0b0b0c; --paper: #f6f5f2; --red: #e11d48; --red-deep: #be123c; --ease: cubic-bezier(.16, 1, .3, 1);
+  --font-display: 'Bricolage Grotesque', Inter, ui-sans-serif, system-ui, sans-serif;
+  --radius-sm: 8px; --radius-md: 12px; --radius-lg: 16px; --radius-xl: 22px; --radius: var(--radius-lg); --radius-pill: 999px;
+  --brand: var(--red);
+
+  /* Claro: papel + cartões brancos, texto em tinta */
+  --bg: #f6f5f2; --surface: #ffffff; --surface-2: #fbfaf8; --surface-3: #efede8;
+  --text: #0b0b0c; --text-2: #3b3b42; --muted: #5c5c63; --muted-2: #8b8b93;
+  --border: rgba(11, 11, 12, .10); --border-strong: rgba(11, 11, 12, .20); --border-soft: rgba(11, 11, 12, .06);
+  --shadow: 0 1px 0 rgba(0, 0, 0, .03), 0 18px 40px -26px rgba(0, 0, 0, .22);
+  --topbar-bg: rgba(246, 245, 242, .82);
+  --glow: radial-gradient(ellipse 60% 38% at 82% -8%, rgba(225, 29, 72, .09), transparent 70%), radial-gradient(ellipse 40% 30% at 0% 18%, rgba(253, 231, 200, .55), transparent 70%);
+  /* A barra lateral é sempre tinta, como as seções escuras da LP */
+  --sb-bg: #0b0b0c; --sb-border: rgba(255, 255, 255, .08); --sb-border-2: rgba(255, 255, 255, .14); --sb-raised: #151517;
+  --sb-text: #d6d6db; --sb-text-2: #a3a3ab; --sb-strong: #ffffff; --sb-muted: #8b8b93; --sb-label: #6b6b73;
+  --sb-hover: rgba(255, 255, 255, .06); --sb-active: rgba(225, 29, 72, .16); --sb-accent: #fb7185; --sb-avatar: #26262a; --sb-avatar-ink: #ffffff;
+}
+:root[data-theme='dark'] {
+  --bg: #0b0b0c; --surface: #151517; --surface-2: #1a1a1d; --surface-3: #212125;
+  --text: #f6f5f2; --text-2: #cfcfd4; --muted: #a3a3ab; --muted-2: #74747c;
+  --border: rgba(255, 255, 255, .09); --border-strong: rgba(255, 255, 255, .18); --border-soft: rgba(255, 255, 255, .05);
+  --shadow: inset 0 0 0 1px rgba(255, 255, 255, .02), 0 18px 40px -26px rgba(0, 0, 0, .8);
+  --topbar-bg: rgba(11, 11, 12, .78);
+  --glow: radial-gradient(ellipse 60% 38% at 82% -10%, rgba(225, 29, 72, .16), transparent 70%);
+  --sb-bg: #070708; --sb-raised: #121214;
+}
+
+body { background-color: var(--bg); background-image: var(--glow); background-repeat: no-repeat; background-attachment: fixed; font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
+::selection { background: rgba(225, 29, 72, .28); }
+button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible, a:focus-visible { outline: 2px solid rgba(225, 29, 72, .55); outline-offset: 2px; }
+
+/* ---------- Tipografia de títulos e números (Bricolage Grotesque) ---------- */
+.page-title, .page-header h1, .modal-head .page-title, .ai-conversation-heading h1, .profile-title h1, .record-title h1,
+.metric-value, .v2-stats b, .opp-kpis b, .crm-summary b, .agent-stats b, .meeting-stats b, .admin-kpis b, .ai-token-summary > b,
+.auth-story h1, .auth-form h2, .mfa-card h1, .home-title, .empty-state h1, .big-score, .v2-date b, .card-title, .brand b {
+  font-family: var(--font-display); letter-spacing: -.035em; font-weight: 700;
+}
+.page-title, .page-header h1 { font-size: 22px; line-height: 1.15; }
+.metric-value, .v2-stats b, .opp-kpis b, .crm-summary b, .agent-stats b, .meeting-stats b { font-size: 28px; letter-spacing: -.04em; font-weight: 700; }
+.v2-page .page-title, .content .page-title { font-size: 22px; font-weight: 700; letter-spacing: -.035em; }
+.v2-stats b.accent { color: var(--red); }
+
+/* ---------- Botões: pílula, vermelho com brilho, tinta ---------- */
+.btn, .v2-primary, .v2-secondary, .v2-btn, .auth-submit, .settings-save, .home-ghost, .home-new, .theme-toggle, .calendar-connect .btn {
+  border-radius: var(--radius-pill);
+  transition: background .25s var(--ease), color .25s var(--ease), border-color .25s var(--ease), box-shadow .25s var(--ease), transform .35s var(--ease);
+}
+.btn, .v2-secondary, .v2-btn { padding-inline: 16px; font-weight: 600; background: var(--surface); border-color: var(--border-strong); color: var(--text); box-shadow: none; }
+.btn:hover:not(:disabled), .v2-secondary:hover:not(:disabled), .v2-btn:hover:not(:disabled) { background: var(--text); color: var(--bg); border-color: var(--text); }
+.btn-primary, .v2-primary, .auth-submit, .settings-save {
+  background: var(--red); border-color: var(--red); color: #fff; padding-inline: 18px; font-weight: 600;
+  box-shadow: 0 10px 28px -10px rgba(225, 29, 72, .75);
+}
+.btn-primary:hover:not(:disabled), .v2-primary:hover:not(:disabled), .auth-submit:hover:not(:disabled), .settings-save:hover:not(:disabled) {
+  background: var(--red-deep); border-color: var(--red-deep); color: #fff; box-shadow: 0 16px 38px -10px rgba(225, 29, 72, .85); transform: translateY(-1px);
+}
+.btn-ghost { background: transparent; border-color: transparent; }
+.btn-ghost:hover:not(:disabled) { background: var(--surface-3); color: var(--text); border-color: transparent; }
+.btn-icon, .v2-icon-btn { padding-inline: 0; }
+.btn-danger-solid, .btn-success { border-radius: var(--radius-pill); }
+.icon-btn, .theme-toggle { border-radius: var(--radius-pill); }
+.theme-toggle { background: var(--surface); }
+.theme-toggle:hover { background: var(--text); color: var(--bg); border-color: var(--text); }
+
+/* ---------- Cartões, abas e badges ---------- */
+.card, .settings-card { border-radius: var(--radius-lg); border-color: var(--border); box-shadow: var(--shadow); }
+.v2-card, .v2-stats { border-radius: var(--radius-xl); box-shadow: var(--shadow); }
+.badge, .v2-pill, .v2-chip, .v2-status, .opp-pill, .v2-count { border-radius: var(--radius-pill); padding-inline: 8px; }
+.badge-brand { background: var(--brand-soft); color: var(--brand-ink); }
+.v2-tab.active, .view-tabs button.active, .record-tabs button.active, .drawer-tabs button.active, .composer-tabs button.active { border-bottom-color: var(--red); }
+.opp-views, .segmented { border-radius: var(--radius-pill); }
+.opp-views button, .segmented button { border-radius: var(--radius-pill); }
+.opp-views button.active, .segmented button.active { background: var(--text); color: var(--bg); box-shadow: none; }
+.opp-card, .deal-card { border-radius: var(--radius-md); }
+.opp-card:hover { border-color: var(--red); box-shadow: 0 14px 32px -18px rgba(225, 29, 72, .55); transform: translateY(-2px); }
+.opp-card { transition: border-color .25s var(--ease), box-shadow .3s var(--ease), transform .4s var(--ease); }
+.opp-column { border-radius: var(--radius-lg); }
+.modal, .contact-drawer, .notification-popover { border-radius: var(--radius-xl); }
+.modal-overlay, .drawer-overlay { backdrop-filter: blur(6px); }
+.opp-search, .global-search, .search-box, .table-search { border-radius: var(--radius-pill); background: var(--surface); }
+.form-control, .opp-filter select, .crm-toolbar select { border-radius: var(--radius-md); }
+.modal input:not([type=checkbox]):not([type=radio]), .modal select, .ai-field input, .ai-field select, .settings-field input, .settings-field select { border-radius: var(--radius-md); }
+.table-card, .opp-table-wrap { border-radius: var(--radius-lg); }
+
+/* ---------- Estrutura: barra lateral em tinta, topbar translúcida ---------- */
+.sidebar { background: var(--sb-bg); border-right: 1px solid var(--sb-border); overflow: hidden; }
+.sidebar::before { content: ''; position: absolute; left: 50%; top: -90px; width: 260px; height: 190px; translate: -50% 0; background: radial-gradient(closest-side, rgba(225, 29, 72, .38), transparent); pointer-events: none; }
+.sidebar > * { position: relative; }
+.brand { height: 64px; border-bottom-color: var(--sb-border); }
+/* Logo branca sempre: a barra lateral não muda de cor com o tema */
+.sidebar .brand-logo.on-light, :root[data-theme='light'] .sidebar .brand-logo.on-light { display: none; }
+.sidebar .brand-logo.on-dark, :root[data-theme='light'] .sidebar .brand-logo.on-dark { display: block; }
+.org-switcher { border-radius: var(--radius-lg); }
+.org-avatar { border-radius: var(--radius-md); background: var(--red); color: #fff; }
+.nav-group button { border-radius: var(--radius-pill); transition: background .25s var(--ease), color .25s var(--ease), transform .35s var(--ease); }
+.nav-group button:hover { transform: translateX(2px); }
+.nav-group button.active { background: var(--sb-active); box-shadow: inset 0 0 0 1px rgba(225, 29, 72, .35); }
+.nav-group button.active .icon { color: var(--sb-accent); }
+.nav-count { background: var(--red); }
+.user-profile, .help-card { border-radius: var(--radius-lg); }
+.topbar { background: var(--topbar-bg); backdrop-filter: blur(18px) saturate(1.4); border-bottom-color: var(--border); }
+.top-avatar { background: var(--ink); }
+.demo-banner { background: var(--ink); color: #e6e6ea; border-bottom: 0; }
+.demo-banner button { color: #fb7185; }
+.brand-mark { background: var(--red); border-radius: var(--radius-md); }
+
+/* ---------- Login ---------- */
+.auth-story { background: var(--ink); background-image: radial-gradient(ellipse 70% 50% at 50% -10%, rgba(225, 29, 72, .55), transparent 70%); }
+.auth-story h1 { letter-spacing: -.045em; }
+.auth-eyebrow { color: #fb7185; }
+.auth-panel { background: var(--bg); }
+.auth-form input { border-radius: var(--radius-pill); padding-inline: 16px; background: var(--surface); }
+
+/* ---------- Tela inicial (assistente): mesmas cores, destaque vermelho ---------- */
+.home, .home[data-theme='light'] {
+  --h-bg: var(--bg); --h-surface: var(--surface); --h-surface-2: var(--surface-3); --h-border: var(--border); --h-border-strong: var(--border-strong);
+  --h-text: var(--text); --h-text-2: var(--text-2); --h-muted: var(--muted); --h-faint: var(--muted-2); --h-accent: var(--red);
+  --h-ok: #16a34a; --h-bad: #dc2626;
+  background: transparent;
+}
+:root[data-theme='dark'] .home { --h-ok: #4ade80; --h-bad: #f87171; }
+.home-title { font-size: 30px; letter-spacing: -.045em; font-weight: 700; line-height: 1.1; }
+.home-composer { border-radius: 28px; box-shadow: var(--shadow); }
+.home-composer:focus-within { border-color: var(--red); box-shadow: 0 0 0 4px rgba(225, 29, 72, .12), var(--shadow); }
+.home-send:not(:disabled) { background: var(--red); color: #fff; box-shadow: 0 8px 22px -8px rgba(225, 29, 72, .8); }
+.home-chips button { border-radius: var(--radius-pill); }
+.home-chips button:hover:not(:disabled) { border-color: var(--red); color: var(--text); }
+.home-dock { background: linear-gradient(to top, var(--bg) 72%, transparent); }
+.home-msg.user p { border-radius: 20px 20px 6px 20px; background: var(--ink); color: #fff; }
+:root[data-theme='dark'] .home-msg.user p { background: var(--red); }
+.home-avatar { background: var(--ink); color: #fff; border-color: transparent; }
+.home-actions li { border-radius: var(--radius-md); }
+
+/* ---------- Superfícies que tinham cor fixa (agora seguem o tema) ---------- */
+.chat-column { background: var(--surface-2); }
+.messages { background-color: var(--bg); background-image: radial-gradient(var(--border) .6px, transparent .6px); }
+.handoff-strip { background: var(--surface-2); color: var(--text-2); border-bottom-color: var(--border); }
+.system-event { background: var(--success-soft); color: var(--success-ink); border-radius: var(--radius-pill); padding: 4px 12px; }
+.phone-chat { background: var(--surface-3); }
+.opp-avatar, .mini-avatar { background: var(--surface-3); color: var(--text-2); }
+.conversation-item { background: var(--surface); border-bottom-color: var(--border-soft); }
+.inbox-tabs button { white-space: nowrap; }
+.score-track { background: var(--surface-3); }
+
+/* ---------- Inbox (conversas e cartões do chat) ---------- */
+.ai-chat-bubble.user { background: var(--brand-soft); border-color: var(--brand-line); }
+.ai-chat-bubble, .message { border-radius: 18px 18px 18px 6px; }
+.ai .message { border-radius: 18px 18px 6px 18px; }
+.human .message { background: var(--ink); }
+.ai-note { background: var(--info-soft); border-color: var(--info-line); color: var(--info-ink); }
+
+@media (prefers-reduced-motion: reduce) {
+  .opp-card:hover, .nav-group button:hover, .btn-primary:hover:not(:disabled) { transform: none; }
+}
