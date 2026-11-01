@@ -74,3 +74,5 @@ Ficha de oportunidade, revisão de login/segurança e padronização visual. Vej
 ### Assinatura das mensagens no WhatsApp
 
 Mensagens enviadas pelo WhatsApp saem com o nome de quem envia em negrito: `*Felipe:* Bom dia` (primeiro nome da pessoa da equipe) e `*Felipa:* Olá!` (nome do agente de IA). Desative em **Configurações → WhatsApp → Assinar mensagens com o nome de quem envia**. O painel guarda o texto sem o prefixo. A assinatura das respostas da IA funciona sem migração. A das mensagens da equipe exige `supabase/migrations/202611030006_whatsapp_signature.sql`; enquanto ela não for aplicada, essas mensagens saem sem nome. Aplique com `SUPABASE_PROJECT_REF=mdzflolthybnzewhpxno npm run opportunities:migrate` e confira com `npm run opportunities:check`.
+
+A tela inicial agora é o **assistente de IA**: conversa estilo chat que lê e opera contatos, oportunidades, tarefas, reuniões e WhatsApp, sem ferramenta de exclusão. Veja [docs/WORKSPACE.md](docs/WORKSPACE.md#assistente-de-ia-tela-inicial). O histórico exige `supabase/migrations/202611040007_assistant.sql` (aplicar no SQL Editor); sem ela o chat funciona, só não salva.

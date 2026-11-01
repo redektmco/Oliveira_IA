@@ -14,6 +14,10 @@ export type Meeting = { id: string; contact_id: string | null; title: string; st
 export type Usage = { id: string; model: string; input_tokens: number; output_tokens: number; status: 'pending' | 'completed' | 'failed'; created_at: string };
 export type ContactNote = {id:string;contact_id:string;content:string;author?:string;created_at:string};
 export type ContactFile = {id:string;contact_id:string;name:string;mime:string;bytes:number;storage_path:string;created_at:string};
+/** Card de ação que o assistente de IA executou (ou tentou executar) na tela inicial. */
+export type AssistantCard = { id: string; tool: string; kind: 'read' | 'create' | 'update' | 'send'; title: string; detail?: string; href?: string; ref?: string; ok: boolean; error?: string };
+export type AssistantMessage = { id?: string; role: 'user' | 'assistant'; content: string; actions?: AssistantCard[] };
+export type AssistantThread = { id: string; title: string; created_at: string; updated_at: string };
 export interface Tables { deal_tasks: DealTask; deal_notes: DealNote; deal_events: DealEvent; contact_notes: ContactNote; contact_files: ContactFile; contacts: Contact; deals: Deal; agents: Agent; knowledge: Knowledge; conversations: Conversation; messages: Message; meetings: Meeting; ai_usage: Usage }
 export type Table = keyof Tables;
 export type DatabaseState = { [K in Table]: Tables[K][] };

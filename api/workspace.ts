@@ -9,6 +9,7 @@ import {webhookEvents} from '../src/lib/settings-types.js';
 import {resolveWebhook} from '../server/webhooks.js';
 import {whatsappConnect,whatsappDiagnosis,whatsappRepair} from '../server/whatsapp-settings.js';
 import {contactSummary,sendChannelMessage,startWhatsApp} from '../server/channels.js';
+import {assistantChat,deleteThread,listThreads,loadThread} from '../server/assistant.js';
 export const config={maxDuration:60};
 async function settings(a:Access){
  const [accounts,s]=await Promise.all([a.db.from('integration_accounts').select('provider,label,connected_at,synced_at,metadata').eq('user_id',a.ownerId),a.db.from('workspace_settings').upsert({user_id:a.ownerId,config:a.settings},{onConflict:'user_id',ignoreDuplicates:true}).select('widget_key').maybeSingle()]);
@@ -105,6 +106,10 @@ export default async function handler(req:VercelRequest,res:VercelResponse){
  if(b.action==='security.erase'){
   requireRole(a);await contactAccess(a,b.contactId);if(b.confirmation!=='EXCLUIR')throw new HttpError(400,'Digite EXCLUIR para confirmar.');const files=await a.db.from('contact_files').select('storage_path').eq('user_id',a.ownerId).eq('contact_id',b.contactId);if(files.data?.length){const removed=await a.db.storage.from('crm-files').remove(files.data.map(f=>f.storage_path));if(removed.error)throw new HttpError(503,'Não foi possível remover os arquivos do contato.');}const r=await a.db.rpc('workspace_erase_contact',{p_owner:a.ownerId,p_contact:b.contactId});if(r.error)throw new HttpError(503,'Não foi possível excluir os dados do titular.');await audit(a,'Excluiu dados de um titular');return res.status(200).json({erased:true});
  }
+ if(b.action==='assistant.chat')return res.status(200).json(await assistantChat(a,b));
+ if(b.action==='assistant.threads')return res.status(200).json(await listThreads(a));
+ if(b.action==='assistant.thread')return res.status(200).json(await loadThread(a,b.id));
+ if(b.action==='assistant.delete')return res.status(200).json(await deleteThread(a,b.id));
  if(b.action==='contact.summary'){const c=await contactAccess(a,b.contactId);return res.status(200).json(await contactSummary(a,c));}
  if(b.action==='channel.send'){return res.status(202).json(await sendChannelMessage(a,b));}
  if(b.action==='whatsapp.start'){const result=await startWhatsApp(a,b);await audit(a,'Iniciou conversa pelo WhatsApp');return res.status(202).json(result);}
