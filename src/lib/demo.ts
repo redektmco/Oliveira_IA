@@ -37,7 +37,7 @@ export function loadDemo(): DatabaseState {
       { id: 'demo-event-1', deal_id: 'demo-deal-1', kind: 'created', detail: { stage: 'new', value: 18000 }, actor_id: null, created_at: day(-20) },
       { id: 'demo-event-2', deal_id: 'demo-deal-1', kind: 'stage', detail: { from: 'meeting', to: 'proposal' }, actor_id: 'demo', created_at: day(-4) },
     ],
-    agents: [{ id: 'demo-agent', name: 'Felipa', company: 'Oliveira & Co.', system_prompt: 'Você é uma assistente comercial transparente e consultiva. Apresente-se como IA. Entenda a necessidade do contato, o orçamento, sua participação na decisão e o prazo. Faça uma pergunta por vez. Não invente preços, integrações, disponibilidade ou agendamentos. Consulte a base fornecida; quando faltar informação, proponha atendimento humano.', greeting: 'Olá! Sou a Felipa, assistente virtual da Oliveira & Co. Como posso ajudar?', model: 'claude-haiku-4-5-20251001', active: true, qualification_threshold: 75, created_at: now }],
+    agents: [{ id: 'demo-agent', name: 'Felipa', company: 'Oliveira & Co.', system_prompt: 'Você é uma assistente comercial transparente e consultiva. Apresente-se como IA. Entenda a necessidade do contato, o orçamento, sua participação na decisão e o prazo. Faça uma pergunta por vez. Não invente preços, integrações, disponibilidade ou agendamentos. Consulte a base fornecida; quando faltar informação, proponha atendimento humano.', greeting: 'Olá! Sou a Felipa, assistente virtual da Oliveira & Co. Como posso ajudar?', model: 'claude-haiku-5-5', active: true, qualification_threshold: 75, created_at: now }],
   };
 }
 export function saveDemo(data: DatabaseState) { localStorage.setItem(key, JSON.stringify(data)); }

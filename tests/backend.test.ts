@@ -73,8 +73,11 @@ test('authorization parser requires one bearer credential', () => {
 });
 
 test('model allowlist and persistent daily quota limits do not allow arbitrary models or unlimited usage', () => {
-  assert.equal(resolveModel('claude-haiku-4-5'), 'claude-haiku-4-5');
-  assert.equal(resolveModel(''), 'claude-haiku-4-5-20251001');
+  // Agentes salvos com Haiku 4.5 passam a usar Haiku 5.5; o padrão é Haiku 5.5.
+  assert.equal(resolveModel('claude-haiku-4-5'), 'claude-haiku-5-5');
+  assert.equal(resolveModel('claude-haiku-4-5-20251001'), 'claude-haiku-5-5');
+  assert.equal(resolveModel(''), 'claude-haiku-5-5');
+  assert.equal(resolveModel('claude-sonnet-4-6'), 'claude-sonnet-4-6');
   assert.throws(() => resolveModel('claude-opus-4-6'), expectHttp(400));
   assert.equal(dailyLimit(), 50);
   assert.equal(dailyLimit('100'), 100);
@@ -87,7 +90,7 @@ test('Claude call is authenticated, owner scoped and accounts real provider toke
   assert.equal(result.text, 'Como posso ajudar?');
   assert.deepEqual(result.usage, { input_tokens: 100, output_tokens: 20 });
   assert.deepEqual(calls.find((item) => item.method === 'agent')?.args, [uid, agentId]);
-  assert.deepEqual(calls.find((item) => item.method === 'reserve')?.args, [uid, agent.model, 50]);
+  assert.deepEqual(calls.find((item) => item.method === 'reserve')?.args, [uid, 'claude-haiku-5-5', 50]);
   assert.deepEqual(calls.find((item) => item.method === 'complete')?.args, [uid, 'usage-id', result.usage]);
   assert.equal(calls.some((item) => item.method === 'append'), false);
   assert.equal(calls[0].method, 'auth');

@@ -97,7 +97,7 @@ Implementado em 04/11/2026. A **Visão geral** é uma conversa com o Claude, no 
 - **O que ela não faz.** Não existe ferramenta de exclusão (contatos, oportunidades, conversas). Não cria evento no Google Calendar: a reunião fica no painel.
 - **WhatsApp.** O envio usa a mesma fila de `whatsapp.start` (contato precisa de telefone válido), com o nome de quem está logado na assinatura. Máximo de 5 envios por pedido; o prompt só permite enviar quando a pessoa pede explicitamente. Fila aceita não prova entrega ou leitura.
 - **Escopo e segurança.** Roda em `/api/workspace` (`assistant.chat`, `assistant.threads`, `assistant.thread`, `assistant.delete`), sempre com o escopo do workspace autenticado e as mesmas validações do painel (`writeData`). Vendedores não usam o assistente (usam a IA nas conversas atribuídas). Conteúdo de clientes é tratado como dado, não instrução. Cada escrita entra na auditoria como "Assistente de IA: …". Cada pedido conta como uma chamada no limite diário (`AI_DAILY_REQUEST_LIMIT`), mesmo com vários passos de ferramenta (máx. 8, cerca de 38 s).
-- **Modelo.** `ANTHROPIC_MODEL` (padrão Haiku 4.5; Sonnet 4.6 também é aceito). Para pedidos com vários passos, Sonnet 4.6 tende a acertar mais.
+- **Modelo.** `ANTHROPIC_MODEL` (padrão Haiku 5.5, `claude-haiku-5-5`; Sonnet 4.6 também é aceito). Para pedidos com vários passos, Sonnet 4.6 tende a acertar mais.
 - **Histórico.** Exige `supabase/migrations/202611040007_assistant.sql` (tabelas `assistant_threads` e `assistant_messages`, RLS forçada, só o servidor acessa). Aplique no SQL Editor do Supabase; é aditiva e repetível. Sem ela, o chat funciona normalmente, mas a conversa não é salva e a tela avisa. Cada pessoa vê apenas as próprias conversas.
 - **Demonstração.** O modo demonstração não chama a IA e mostra o campo desativado.
 
@@ -141,7 +141,7 @@ Implementado em 01/11/2026. Exige `supabase/migrations/202611070010_platform_lim
 **Limite do chat de IA (estilo Claude).** Vale para o Assistente da tela inicial e o Playground, por pessoa em cada workspace:
 
 - **Sessão de 5 horas:** começa na primeira mensagem e reinicia 5 horas depois. **Limite diário:** zera à meia-noite no fuso do workspace.
-- O consumo é medido em custo equivalente de tokens (Haiku 4.5: US$ 1/5 por milhão de tokens de entrada/saída; Sonnet 4.6: US$ 3/15). Padrões: US$ 1 por sessão e US$ 3 por dia (`AI_CHAT_WINDOW_USD`, `AI_CHAT_DAILY_USD`). A agência pode personalizar por cliente.
+- O consumo é medido em custo equivalente de tokens (Haiku 5.5: US$ 0,10/0,50 por milhão de tokens de entrada/saída, ou 0,50/2,50 com mais de 100 mil tokens de entrada; Sonnet 4.6: US$ 3/15). Padrões: US$ 1 por sessão e US$ 3 por dia (`AI_CHAT_WINDOW_USD`, `AI_CHAT_DAILY_USD`). A agência pode personalizar por cliente.
 - O cliente vê só a porcentagem: barra abaixo do campo do assistente e do Playground ("Sessão: 34% usada · reinicia em 2 h 13 min") e o quadro completo em **Uso da IA**. Ao chegar em 100%, a mensagem informa o horário de retorno.
 - **SDR IA sem limite:** respostas automáticas no WhatsApp, widget, e-mail e Instagram, conversas de teste da Caixa de entrada, automações ("Gerar com IA") e resumos não são bloqueados. Cada chamada é registrada com o tipo em **Uso da IA**.
 - No máximo duas respostas do chat em andamento por pessoa. Sem a migração, o servidor usa o limite diário antigo (`AI_DAILY_REQUEST_LIMIT`) e o medidor não aparece.

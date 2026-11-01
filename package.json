@@ -27,7 +27,9 @@
     "workflows:check": "node --use-env-proxy --import tsx scripts/migrate-workflows.ts --check",
     "workflows:migrate": "node --use-env-proxy --import tsx scripts/migrate-workflows.ts --apply",
     "platform:check": "node --use-env-proxy --import tsx scripts/migrate-platform.ts --check",
-    "platform:migrate": "node --use-env-proxy --import tsx scripts/migrate-platform.ts --apply"
+    "platform:migrate": "node --use-env-proxy --import tsx scripts/migrate-platform.ts --apply",
+    "haiku:check": "node --use-env-proxy --import tsx scripts/migrate-haiku.ts --check",
+    "haiku:migrate": "node --use-env-proxy --import tsx scripts/migrate-haiku.ts --apply"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.78.0",

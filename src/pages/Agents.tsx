@@ -6,7 +6,7 @@ import './ai.css';
 const blankAgent = (): RowInput<'agents'> => ({
   name: 'Felipa', company: '', greeting: 'Olá! Sou a Felipa, assistente virtual da empresa. Como posso ajudar?',
   system_prompt: 'Você é uma assistente comercial consultiva. Apresente-se como inteligência artificial. Entenda a necessidade do contato, faça uma pergunta de cada vez e use apenas informações confirmadas na base de conhecimento. Quando faltar uma informação, diga que precisa confirmar com a equipe. Nunca invente preços, condições ou disponibilidade de agenda.',
-  model: 'claude-haiku-4-5-20251001', active: true, qualification_threshold: 75,
+  model: 'claude-haiku-5-5', active: true, qualification_threshold: 75,
 });
 
 const errorText = (error: unknown) => error instanceof Error ? error.message : 'Não foi possível concluir a operação. Tente novamente.';
@@ -30,7 +30,7 @@ export default function Agents() {
     setEditing(agent ?? 'new');
     setForm(agent ? {
       name: agent.name, company: agent.company, system_prompt: agent.system_prompt,
-      greeting: agent.greeting, model: agent.model, active: agent.active,
+      greeting: agent.greeting, model: agent.model.startsWith('claude-haiku-4-5') ? 'claude-haiku-5-5' : agent.model, active: agent.active,
       qualification_threshold: agent.qualification_threshold,
       ...(agent.tone ? { tone: agent.tone, criteria_weights: agent.criteria_weights ?? defaultWeights } : {}),
     } : blankAgent());
@@ -98,7 +98,7 @@ export default function Agents() {
           <fieldset className="ai-weights"><legend>Peso de cada critério na nota</legend>
             {([['budget', 'Orçamento'], ['need', 'Necessidade'], ['authority', 'Autoridade'], ['timing', 'Prazo']] as const).map(([key, label]) => <label key={key} className="ai-weight"><span>{label}</span><input type="range" min={0} max={100} step={5} value={weights[key]} onChange={e => setWeight(key, Number(e.target.value))} aria-label={`Peso de ${label}`} /><b>{weightTotal ? Math.round(weights[key] / weightTotal * 100) : 0}%</b></label>)}
             <small>A nota do lead é a média ponderada dos quatro critérios. Os pesos são proporcionais: o que importa é a relação entre eles.</small></fieldset>
-          <div className="ai-grid"><label className="ai-field">Modelo Claude<select value={form.model} onChange={e => setForm({ ...form, model: e.target.value })}><option value="claude-haiku-4-5-20251001">Haiku 4.5 — econômico</option><option value="claude-sonnet-4-6">Sonnet 4.6</option>{form.model === 'claude-haiku-4-5' && <option value="claude-haiku-4-5">Haiku 4.5 — alias</option>}</select></label><label className="ai-field">Limite de qualificação (0–100)<input type="number" min={0} max={100} step={1} required value={form.qualification_threshold} onChange={e => setForm({ ...form, qualification_threshold: Number(e.target.value) })} /><small>Referência para qualificação manual; não altera o score de contatos automaticamente.</small></label></div>
+          <div className="ai-grid"><label className="ai-field">Modelo Claude<select value={form.model} onChange={e => setForm({ ...form, model: e.target.value })}><option value="claude-haiku-5-5">Haiku 5.5 — rápido e econômico</option><option value="claude-sonnet-4-6">Sonnet 4.6</option></select></label><label className="ai-field">Limite de qualificação (0–100)<input type="number" min={0} max={100} step={1} required value={form.qualification_threshold} onChange={e => setForm({ ...form, qualification_threshold: Number(e.target.value) })} /><small>Referência para qualificação manual; não altera o score de contatos automaticamente.</small></label></div>
           <label className="ai-check"><input type="checkbox" checked={form.active} onChange={e => setForm({ ...form, active: e.target.checked })} /> Agente ativo para receber mensagens</label>
           <p className="ai-muted">A chave da Anthropic fica apenas no servidor. As conversas enviadas à IA podem conter dados dos seus contatos; use somente informações necessárias.</p>
         </div><div className="modal-footer"><button type="button" className="btn" disabled={busy} onClick={() => setEditing(null)}>Cancelar</button><button className="btn btn-primary" disabled={busy} type="submit">{busy ? 'Salvando...' : 'Salvar agente'}</button></div>

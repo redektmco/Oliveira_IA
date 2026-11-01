@@ -1,10 +1,11 @@
 export const ALLOWED_MODELS = [
-  'claude-haiku-4-5',
-  'claude-haiku-4-5-20251001',
+  'claude-haiku-5-5',
   'claude-sonnet-4-6',
 ] as const;
 
-export const DEFAULT_MODEL = 'claude-haiku-4-5-20251001';
+export const DEFAULT_MODEL = 'claude-haiku-5-5';
+/** Agentes salvos com Haiku 4.5 passam a usar Haiku 5.5. */
+const LEGACY_MODELS: Record<string, string> = { 'claude-haiku-4-5': 'claude-haiku-5-5', 'claude-haiku-4-5-20251001': 'claude-haiku-5-5' };
 export const MAX_BODY_BYTES = 64 * 1024;
 export const MAX_MESSAGE_CHARACTERS = 4_000;
 export const MAX_HISTORY_CHARACTERS = 24_000;
@@ -73,9 +74,10 @@ export function parseChatInput(rawBody: unknown): ChatInput {
 }
 
 export function resolveModel(agentModel: string | null | undefined, configuredModel?: string): string {
-  const model = agentModel?.trim() || configuredModel?.trim() || DEFAULT_MODEL;
+  const requested = agentModel?.trim() || configuredModel?.trim() || DEFAULT_MODEL;
+  const model = LEGACY_MODELS[requested] ?? requested;
   if (!(ALLOWED_MODELS as readonly string[]).includes(model)) {
-    throw new HttpError(400, 'Modelo não habilitado. Use Claude Haiku 4.5 ou Claude Sonnet 4.6 nas configurações do agente.');
+    throw new HttpError(400, 'Modelo não habilitado. Use Claude Haiku 5.5 ou Claude Sonnet 4.6 nas configurações do agente.');
   }
   return model;
 }

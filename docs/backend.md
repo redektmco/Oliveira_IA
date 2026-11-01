@@ -12,13 +12,13 @@ Configure estas variáveis somente no servidor/local e nas configurações do pr
 - `AI_CHAT_WINDOW_USD` / `AI_CHAT_DAILY_USD`: limite do chat de IA (Assistente e Playground) por pessoa, em US$ equivalentes ao preço público por token; padrão `1` por sessão de 5 horas e `3` por dia (fuso do workspace). O SDR IA, automações e resumos não têm limite. A agência pode personalizar por cliente.
 - `AI_DAILY_REQUEST_LIMIT`: legado, usado só enquanto a migração `202611070010_platform_limits.sql` não for aplicada.
 - `PLATFORM_ADMIN_EMAILS`: e-mails confirmados da equipe da agência; libera o painel de clientes.
-- `ANTHROPIC_MODEL`: fallback opcional caso um agente não defina modelo. O padrão dos agentes é `claude-haiku-4-5-20251001`.
+- `ANTHROPIC_MODEL`: fallback opcional caso um agente não defina modelo. O padrão é `claude-haiku-5-5` (Claude Haiku 5.5). Agentes salvos com Haiku 4.5 passam a usar Haiku 5.5.
 - `WHATSAPP_EVO_URL`, `WHATSAPP_EVO_INSTANCE` e `WHATSAPP_EVO_TOKEN` (ou alias `WHATSAPP_TOKEN_EVO`): configuração privada de servidor para consultar e enviar pela instância Evolution. Nenhuma dessas variáveis deve usar prefixo `VITE_`.
 - `WHATSAPP_WEBHOOK_SECRET`: proteção da entrada Evolution por cabeçalho próprio.
 - `WHATSAPP_WORKER_SECRET`: proteção do processamento agendado e operações internas; deve coincidir com o segredo `felipa_whatsapp_worker` no Supabase Vault.
 - `WHATSAPP_OWNER_USER_ID`: UUID da conta proprietária autorizada a operar a instância.
 
-Modelos aceitos: `claude-haiku-4-5`, `claude-haiku-4-5-20251001` e `claude-sonnet-4-6`. O modelo escolhido precisa estar disponível na conta Anthropic; nenhum acesso externo foi pressuposto ou validado sem as credenciais.
+Modelos aceitos: `claude-haiku-5-5` e `claude-sonnet-4-6`. As chamadas não enviam `temperature` (Haiku 5.5 recusa valores fora do padrão), usam `output_config.effort: "medium"` e `max_tokens` 8.192 para deixar espaço ao raciocínio (thinking adaptativo, ligado por padrão no Haiku 5.5). Exige `supabase/migrations/202611080011_haiku_5_5.sql` (`npm run haiku:migrate`). O modelo escolhido precisa estar disponível na conta Anthropic; nenhum acesso externo foi pressuposto ou validado sem as credenciais.
 
 Aplique os arquivos de `supabase/migrations/` em ordem antes de usar a aplicação autenticada. Cada conta tem um workspace privado; compartilhamento de equipe ainda não foi implementado. Excluir contato ou agente com referências é bloqueado; desvincule/exclua os dependentes primeiro.
 

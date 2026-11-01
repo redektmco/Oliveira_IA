@@ -83,7 +83,7 @@ begin
  if p_user_id is null or p_kind is null or p_kind not in ('chat','sdr','automation','summary') then
   raise exception using errcode='22023',message='INVALID_AI_RESERVATION';
  end if;
- if p_model is null or p_model not in ('claude-haiku-4-5','claude-haiku-4-5-20251001','claude-sonnet-4-6') then
+ if p_model is null or p_model not in ('claude-haiku-5-5','claude-haiku-4-5','claude-haiku-4-5-20251001','claude-sonnet-4-6') then
   raise exception using errcode='22023',message='INVALID_AI_MODEL';
  end if;
  if p_kind='chat' then

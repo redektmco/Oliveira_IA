@@ -33,7 +33,8 @@ const contactStatuses=['new','qualifying','qualified','unqualified'];
 export function createAssistantModel(apiKey:string):AssistantModel{
  const client=new Anthropic({apiKey,timeout:30_000,maxRetries:0});
  return async({model,system,messages,tools})=>{
-  const r=await client.messages.create({model,max_tokens:4096,temperature:0.3,system,messages:messages as Anthropic.MessageParam[],tools});
+  // Blocos de thinking voltam inalterados no laço de ferramentas (merged.push(response.content)).
+  const r=await client.messages.create({model,max_tokens:8192,output_config:{effort:'medium'},system,messages:messages as Anthropic.MessageParam[],tools});
   return {content:r.content as unknown as Block[],stop_reason:r.stop_reason,usage:{input_tokens:r.usage.input_tokens,output_tokens:r.usage.output_tokens}};
  };
 }

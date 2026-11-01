@@ -58,6 +58,14 @@ test('chat limit: 5h window and daily cap per person, SDR without limit', async 
     await reserve('chat', OTHER); await reserve('chat', OTHER);
     await assert.rejects(reserve('chat', OTHER), /AI_CHAT_BUSY/);
     await assert.rejects(reserve('chat', null), /INVALID_AI_RESERVATION/, 'chat requires the person');
+    // Haiku 5.5: US$ 0,10/0,50 por milhão até 100 mil tokens de entrada; 0,50/2,50 acima.
+    const h55 = (await db.query<{id: string}>(`select public.reserve_ai_usage($1,'claude-haiku-5-5','sdr') as id`, [OWNER])).rows[0].id;
+    await complete(h55, 50_000, 10_000);
+    assert.equal(Number((await db.query<{c: string}>(`select cost_micros as c from public.ai_usage where id=$1`, [h55])).rows[0].c), 10_000);
+    await complete(h55, 200_000, 10_000);
+    assert.equal(Number((await db.query<{c: string}>(`select cost_micros as c from public.ai_usage where id=$1`, [h55])).rows[0].c), 125_000);
+    await db.exec(`update public.agents set model=model`);
+    await assert.rejects(db.query(`select public.reserve_ai_usage($1,'claude-opus-4-6','sdr')`, [OWNER]), /INVALID_AI_MODEL/);
 
     // Hidden members exist and platform tables are server-only.
     await db.exec(`insert into public.workspace_members(owner_id,user_id,email,role,status,hidden) values('${OWNER}','${OTHER}','agencia@v4.com','admin','active',true)`);
