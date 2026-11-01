@@ -10,6 +10,8 @@ import {resolveWebhook} from '../server/webhooks.js';
 import {whatsappConnect,whatsappDiagnosis,whatsappRepair} from '../server/whatsapp-settings.js';
 import {contactSummary,sendChannelMessage,startWhatsApp} from '../server/channels.js';
 import {assistantChat,deleteThread,listThreads,loadThread} from '../server/assistant.js';
+import {kickWorkflows} from '../server/automations.js';
+import {deleteWorkflow,getWorkflow,listRuns,listWorkflows,runWorkflowNow,saveWorkflow,setWorkflowStatus} from '../server/workflows.js';
 export const config={maxDuration:60};
 async function settings(a:Access){
  const [accounts,s]=await Promise.all([a.db.from('integration_accounts').select('provider,label,connected_at,synced_at,metadata').eq('user_id',a.ownerId),a.db.from('workspace_settings').upsert({user_id:a.ownerId,config:a.settings},{onConflict:'user_id',ignoreDuplicates:true}).select('widget_key').maybeSingle()]);
@@ -33,7 +35,7 @@ export default async function handler(req:VercelRequest,res:VercelResponse){
  const b=bodyOf(req,3*1024*1024),a=await access(req,{mfaSetup:b.action==='bootstrap'||b.action==='security.mfa'});
  if(b.action==='bootstrap')return res.status(200).json(await bootstrap(a));
  if(b.action==='data')return res.status(200).json({data:await readData(a)});
- if(['create','update','delete'].includes(b.action))return res.status(200).json(await writeData(a,b));
+ if(['create','update','delete'].includes(b.action)){const result=await writeData(a,b);waitUntil(kickWorkflows());return res.status(200).json(result);}
  if(b.action==='settings'){requireRole(a,['admin','manager']);return res.status(200).json(await settings(a));}
  if(b.action==='settings.save'){
   requireRole(a);const section=text(b.section,30,true),value=validateSection(section,b.value);
@@ -104,9 +106,15 @@ export default async function handler(req:VercelRequest,res:VercelResponse){
   requireRole(a);const contact=await contactAccess(a,b.contactId),all=await readData(a),conversations=(all.conversations as any[]).filter(c=>c.contact_id===b.contactId),ids=new Set(conversations.map(c=>c.id));await audit(a,'Exportou dados de um titular');return res.status(200).json({contact,conversations,messages:(all.messages as any[]).filter(m=>ids.has(m.conversation_id)),notes:(all.contact_notes as any[]).filter(n=>n.contact_id===b.contactId),meetings:(all.meetings as any[]).filter(n=>n.contact_id===b.contactId),deals:(all.deals as any[]).filter(n=>n.contact_id===b.contactId),files:(all.contact_files as any[]).filter(n=>n.contact_id===b.contactId)});
  }
  if(b.action==='security.erase'){
-  requireRole(a);await contactAccess(a,b.contactId);if(b.confirmation!=='EXCLUIR')throw new HttpError(400,'Digite EXCLUIR para confirmar.');const files=await a.db.from('contact_files').select('storage_path').eq('user_id',a.ownerId).eq('contact_id',b.contactId);if(files.data?.length){const removed=await a.db.storage.from('crm-files').remove(files.data.map(f=>f.storage_path));if(removed.error)throw new HttpError(503,'Não foi possível remover os arquivos do contato.');}const r=await a.db.rpc('workspace_erase_contact',{p_owner:a.ownerId,p_contact:b.contactId});if(r.error)throw new HttpError(503,'Não foi possível excluir os dados do titular.');await audit(a,'Excluiu dados de um titular');return res.status(200).json({erased:true});
+  requireRole(a);await contactAccess(a,b.contactId);if(b.confirmation!=='EXCLUIR')throw new HttpError(400,'Digite EXCLUIR para confirmar.');const files=await a.db.from('contact_files').select('storage_path').eq('user_id',a.ownerId).eq('contact_id',b.contactId);if(files.data?.length){const removed=await a.db.storage.from('crm-files').remove(files.data.map(f=>f.storage_path));if(removed.error)throw new HttpError(503,'Não foi possível remover os arquivos do contato.');}const r=await a.db.rpc('workspace_erase_contact',{p_owner:a.ownerId,p_contact:b.contactId});if(r.error)throw new HttpError(503,'Não foi possível excluir os dados do titular.');await a.db.from('workflow_runs').delete().eq('user_id',a.ownerId).eq('record_id',b.contactId);await audit(a,'Excluiu dados de um titular');return res.status(200).json({erased:true});
  }
- if(b.action==='assistant.chat')return res.status(200).json(await assistantChat(a,b));
+ if(b.action==='assistant.chat'){const reply=await assistantChat(a,b);if(reply.actions.some(x=>x.ok&&x.kind!=='read'))waitUntil(kickWorkflows());return res.status(200).json(reply);}
+ if(b.action==='workflows.list')return res.status(200).json({...await listWorkflows(a),runs:await listRuns(a,undefined,40)});
+ if(b.action==='workflows.get')return res.status(200).json({workflow:await getWorkflow(a,b.id),runs:await listRuns(a,b.id,50)});
+ if(b.action==='workflows.save')return res.status(200).json({workflow:await saveWorkflow(a,b.workflow||{})});
+ if(b.action==='workflows.status')return res.status(200).json({workflow:await setWorkflowStatus(a,b.id,b.status)});
+ if(b.action==='workflows.delete')return res.status(200).json(await deleteWorkflow(a,b.id));
+ if(b.action==='workflows.run'){const run=await runWorkflowNow(a,b.id,b.recordId||undefined);waitUntil(kickWorkflows());return res.status(202).json({run});}
  if(b.action==='assistant.threads')return res.status(200).json(await listThreads(a));
  if(b.action==='assistant.thread')return res.status(200).json(await loadThread(a,b.id));
  if(b.action==='assistant.delete')return res.status(200).json(await deleteThread(a,b.id));
@@ -126,7 +134,7 @@ export default async function handler(req:VercelRequest,res:VercelResponse){
  if(b.action==='workspace.erase'){
   requireRole(a);if(a.ownerId!==a.user.id||b.confirmation!==a.settings.general.name)throw new HttpError(400,'Somente o proprietário pode excluir. Digite o nome exato do workspace.');
   const files=await a.db.from('contact_files').select('storage_path').eq('user_id',a.ownerId);if(files.data?.length){const removed=await a.db.storage.from('crm-files').remove(files.data.map(f=>f.storage_path));if(removed.error)throw new HttpError(503,'Não foi possível remover os arquivos.');}
-  const r=await a.db.rpc('workspace_erase',{p_owner:a.ownerId});if(r.error)throw new HttpError(503,'Não foi possível excluir o workspace.');return res.status(200).json({erased:true});
+  await a.db.from('workflows').delete().eq('user_id',a.ownerId);const r=await a.db.rpc('workspace_erase',{p_owner:a.ownerId});if(r.error)throw new HttpError(503,'Não foi possível excluir o workspace.');return res.status(200).json({erased:true});
  }
  throw new HttpError(400,'Operação desconhecida.');
  }catch(error){const e=safeError(error);return res.status(e.status).json({error:e.error});}

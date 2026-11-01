@@ -8,6 +8,7 @@ import {createClaude} from './anthropic.js';
 import {serverConfig,createRepository} from './supabase.js';
 import {HttpError,dailyLimit,resolveModel} from './validation.js';
 import {buildSystemPrompt} from './chat.js';
+import {processWorkflows} from './workflows.js';
 export async function runEmailJobs(){
  const db=adminDb(),claimed=await db.rpc('workspace_claim_jobs',{p_kind:'email.send',p_limit:1});if(claimed.error)return;
  for(const job of claimed.data||[]){let started=false,messageId=job.payload.messageId;
@@ -65,5 +66,15 @@ export async function runAutomations(){
  const db=adminDb(),quota=await db.rpc('workspace_rate',{p_bucket:'automation-maintenance',p_window:new Date(Math.floor(Date.now()/300000)*300000).toISOString(),p_limit:1});if(quota.data)await scheduledMaintenance();
  const google=await db.from('integration_accounts').select('user_id').eq('provider','google').or(`synced_at.is.null,synced_at.lt.${new Date(Date.now()-300000).toISOString()}`).order('synced_at',{nullsFirst:true}).limit(1);
  for(const account of google.data||[])await syncGoogle(db,account.user_id).catch(()=>{});
+ // Automações (workflows): eventos, agendamentos e execuções pendentes, antes do envio de e-mails da fila.
+ await processWorkflows({schedules:true,budgetMs:30_000}).catch(()=>undefined);
  await Promise.allSettled([runEmailJobs(),runChannelJobs(),deliverWebhooks()]);
+}
+/** Chamado pelo agendador dedicado (supabase/workflows-scheduler.sql): eventos, agendamentos e esperas vencidas. */
+export async function runWorkflowQueue(){
+ try{const r=await processWorkflows({schedules:true,budgetMs:45_000});if(r.emails)await runEmailJobs();}catch{/* Próximo minuto tenta de novo. */}
+}
+/** Processa automações logo após uma gravação no painel, sem esperar o agendador. Nunca lança. */
+export async function kickWorkflows(){
+ try{const r=await processWorkflows({budgetMs:20_000});if(r.emails)await runEmailJobs();}catch{/* O agendador tenta de novo. */}
 }
