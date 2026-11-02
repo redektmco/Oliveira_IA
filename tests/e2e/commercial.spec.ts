@@ -185,12 +185,12 @@ test('agente salva tom de voz e pesos dos critérios no modo local', async ({pag
   await navigate(page,'Agentes de IA');
   await page.getByRole('button',{name:'Editar agente'}).first().click();
   const dialog = page.getByRole('dialog',{name:'Editar agente'});
-  await dialog.getByLabel('Formal').check();
+  await dialog.getByRole('radio',{name:/Formal/}).click();
   await dialog.getByLabel('Peso de Orçamento').fill('50');
-  await expect(dialog.getByText('Peso de cada critério na nota')).toBeVisible();
+  await expect(dialog.getByText('Critérios de qualificação',{exact:true})).toBeVisible();
   await dialog.getByRole('button',{name:'Salvar agente'}).click();
   await expect(dialog).toBeHidden();
   await page.getByRole('button',{name:'Editar agente'}).first().click();
-  await expect(page.getByRole('dialog',{name:'Editar agente'}).getByLabel('Formal')).toBeChecked();
+  await expect(page.getByRole('dialog',{name:'Editar agente'}).getByRole('radio',{name:/Formal/})).toHaveAttribute('aria-checked','true');
   await expect(page.getByRole('dialog',{name:'Editar agente'}).getByLabel('Peso de Orçamento')).toHaveValue('50');
 });

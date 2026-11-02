@@ -14,3 +14,15 @@
 .ai-weights{border:0;margin:0;padding:0;display:grid;gap:var(--sp-2)}.ai-weights legend{font-size:var(--fs-sm);font-weight:500;color:var(--text-2);margin-bottom:var(--sp-1);padding:0}
 .ai-weight{display:grid;grid-template-columns:110px 1fr 44px;align-items:center;gap:var(--sp-3);font-size:var(--fs-sm)}.modal .ai-weight input[type=range]{accent-color:var(--brand);width:100%;padding:0;height:auto;min-height:0;border:0}.ai-weight b{text-align:right;font-variant-numeric:tabular-nums}
 .ai-weights small{color:var(--muted);font-size:var(--fs-xs);line-height:1.5}
+
+.ai-modal.ai-modal-wide{width:min(1120px,calc(100vw - 32px))}
+.agent-editor{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:var(--sp-4);align-items:start}
+.agent-editor-col{display:flex;flex-direction:column;gap:var(--sp-3);min-width:0}
+.agent-editor .form-section{margin:0}
+.agent-editor .form-section label{margin-bottom:var(--sp-3)}
+.agent-editor .tone-options{margin-top:0}
+.agent-editor .tone-options button{color:var(--text);font-family:inherit}
+.agent-editor .threshold{margin:var(--sp-3) 0}
+.agent-editor .threshold-input{margin:0;width:84px}.agent-editor .threshold-input input{text-align:center}
+.agent-editor .phone-preview{margin-top:0}.agent-editor .phone-chat{height:140px}
+@media(max-width:900px){.agent-editor{grid-template-columns:1fr}}

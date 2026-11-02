@@ -161,3 +161,8 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 @media (prefers-reduced-motion: reduce) {
   .opp-card:hover, .nav-group button:hover, .btn-primary:hover:not(:disabled) { transform: none; }
 }
+
+/* Rótulos de formulário seguem o tema (antes tinham cinza fixo e sumiam no escuro) */
+.modal label > span, .crm-modal label > span, .ai-field > span, .settings-field > span, .field-label { color: var(--text-2); }
+.modal .ai-channel-choice label > span, .modal .ai-weight > span { color: var(--text); }
+.modal .ai-channel-choice small { color: var(--muted); }
