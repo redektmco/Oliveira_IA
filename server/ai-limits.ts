@@ -23,7 +23,7 @@ type UsageRow={window_start:string|null;window_end:string|null;window_used:numbe
 const MICROS=1_000_000;
 function budget(raw:string|undefined,fallbackUsd:number){const n=Number(raw);return Math.round((Number.isFinite(n)&&n>=0.01&&n<=1000?n:fallbackUsd)*MICROS);}
 /** Padrões configuráveis na Vercel: AI_CHAT_WINDOW_USD (por sessão de 5h) e AI_CHAT_DAILY_USD (por dia). */
-export function defaultChatBudgets(env:Record<string,string|undefined>=process.env){return {windowMicros:budget(env.AI_CHAT_WINDOW_USD,1),dailyMicros:budget(env.AI_CHAT_DAILY_USD,3)};}
+export function defaultChatBudgets(env:Record<string,string|undefined>=process.env){return {windowMicros:budget(env.AI_CHAT_WINDOW_USD,0.1),dailyMicros:budget(env.AI_CHAT_DAILY_USD,0.3)};}
 
 /** Limites do workspace: os definidos pela agência ou os padrões do servidor. */
 export async function chatPolicy(db:SupabaseClient,ownerId:string,actorId:string,timezone:string):Promise<ChatPolicy>{

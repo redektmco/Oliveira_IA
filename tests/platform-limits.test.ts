@@ -83,8 +83,8 @@ test('limit status, messages and budgets', () => {
   assert.deepEqual([full.window.percent, full.daily.percent, full.blocked], [100, 40, 'window']);
   assert.match(limitMessage('AI_CHAT_WINDOW_LIMIT', full, 'America/Sao_Paulo'), /100% da sua sessão de 5 horas.*às 14:00/);
   assert.match(limitMessage('AI_CHAT_DAILY_LIMIT', full, 'America/Sao_Paulo'), /limite diário.*amanhã às 00:00/);
-  assert.deepEqual(defaultChatBudgets({}), {windowMicros: 1_000_000, dailyMicros: 3_000_000});
-  assert.deepEqual(defaultChatBudgets({AI_CHAT_WINDOW_USD: '0.5', AI_CHAT_DAILY_USD: 'abc'}), {windowMicros: 500_000, dailyMicros: 3_000_000});
+  assert.deepEqual(defaultChatBudgets({}), {windowMicros: 100_000, dailyMicros: 300_000});
+  assert.deepEqual(defaultChatBudgets({AI_CHAT_WINDOW_USD: '0.5', AI_CHAT_DAILY_USD: 'abc'}), {windowMicros: 500_000, dailyMicros: 300_000});
 });
 
 test('only confirmed agency e-mails are platform admins', async () => {

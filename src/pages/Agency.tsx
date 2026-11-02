@@ -73,7 +73,7 @@ export default function Agency(){
    <Field label="Nome do cliente (opcional)"><input maxLength={120} value={form.name} onChange={e=>setForm({...form,name:e.target.value})}/></Field>
   </Dialog>}
   {dialog&&typeof dialog==='object'&&'limits' in dialog&&<Dialog title={`Limites do chat · ${dialog.limits.name}`} onClose={close} onSubmit={e=>saveLimits(e,dialog.limits)} busy={busy}>
-   <p>Valem para o Assistente da tela inicial e o Playground, <b>por pessoa</b>. O cliente vê apenas a porcentagem usada. O SDR IA não tem limite. Deixe em branco para usar o padrão ({money(defaults?.windowUsd)} por sessão de 5h e {money(defaults?.dailyUsd)} por dia). Com Haiku, um pedido ao assistente custa em média de US$ 0,01 a US$ 0,05.</p>
+   <p>Valem para o Assistente da tela inicial e o Playground, <b>por pessoa</b>. O cliente vê apenas a porcentagem usada. O SDR IA não tem limite. Deixe em branco para usar o padrão ({money(defaults?.windowUsd)} por sessão de 5h e {money(defaults?.dailyUsd)} por dia). Com Haiku 5.5, um pedido ao assistente custa em média de US$ 0,001 a US$ 0,005.</p>
    <div className="settings-form-grid">
     <Field label="Por sessão de 5 horas (US$)"><input inputMode="decimal" value={form.windowUsd} onChange={e=>setForm({...form,windowUsd:e.target.value})} placeholder={String(defaults?.windowUsd??'')}/></Field>
     <Field label="Por dia (US$)"><input inputMode="decimal" value={form.dailyUsd} onChange={e=>setForm({...form,dailyUsd:e.target.value})} placeholder={String(defaults?.dailyUsd??'')}/></Field>

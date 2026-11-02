@@ -141,7 +141,7 @@ Implementado em 01/11/2026. Exige `supabase/migrations/202611070010_platform_lim
 **Limite do chat de IA (estilo Claude).** Vale para o Assistente da tela inicial e o Playground, por pessoa em cada workspace:
 
 - **Sessão de 5 horas:** começa na primeira mensagem e reinicia 5 horas depois. **Limite diário:** zera à meia-noite no fuso do workspace.
-- O consumo é medido em custo equivalente de tokens (Haiku 5.5: US$ 0,10/0,50 por milhão de tokens de entrada/saída, ou 0,50/2,50 com mais de 100 mil tokens de entrada; Sonnet 4.6: US$ 3/15). Padrões: US$ 1 por sessão e US$ 3 por dia (`AI_CHAT_WINDOW_USD`, `AI_CHAT_DAILY_USD`). A agência pode personalizar por cliente.
+- O consumo é medido em custo equivalente de tokens (Haiku 5.5: US$ 0,10/0,50 por milhão de tokens de entrada/saída, ou 0,50/2,50 com mais de 100 mil tokens de entrada; Sonnet 4.6: US$ 3/15). Padrões: US$ 0,10 por sessão e US$ 0,30 por dia (com Haiku 5.5, algo como 20 a 100 pedidos ao assistente por sessão) (`AI_CHAT_WINDOW_USD`, `AI_CHAT_DAILY_USD`). A agência pode personalizar por cliente.
 - O cliente vê só a porcentagem: barra abaixo do campo do assistente e do Playground ("Sessão: 34% usada · reinicia em 2 h 13 min") e o quadro completo em **Uso da IA**. Ao chegar em 100%, a mensagem informa o horário de retorno.
 - **SDR IA sem limite:** respostas automáticas no WhatsApp, widget, e-mail e Instagram, conversas de teste da Caixa de entrada, automações ("Gerar com IA") e resumos não são bloqueados. Cada chamada é registrada com o tipo em **Uso da IA**.
 - No máximo duas respostas do chat em andamento por pessoa. Sem a migração, o servidor usa o limite diário antigo (`AI_DAILY_REQUEST_LIMIT`) e o medidor não aparece.

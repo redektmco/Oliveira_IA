@@ -46,8 +46,8 @@ Em **Project → Settings → Environment Variables**, adicione as variáveis pa
 | `ANTHROPIC_API_KEY` | **Privada / Sensitive** | Chave do console Anthropic com créditos |
 | `AI_SECRET_CLAUDE` | **Privada / Sensitive**, alternativa | Alias aceito se você usa esse nome; não é necessário preencher os dois |
 | `AI_DAILY_REQUEST_LIMIT` | Servidor, opcional | Usado só enquanto a migração `202611070010_platform_limits.sql` não for aplicada |
-| `AI_CHAT_WINDOW_USD` | Servidor, opcional | `1` — limite do chat de IA por pessoa em cada sessão de 5 horas (US$ equivalentes) |
-| `AI_CHAT_DAILY_USD` | Servidor, opcional | `3` — limite diário do chat de IA por pessoa |
+| `AI_CHAT_WINDOW_USD` | Servidor, opcional | `0.1` — limite do chat de IA por pessoa em cada sessão de 5 horas (US$ equivalentes) |
+| `AI_CHAT_DAILY_USD` | Servidor, opcional | `0.3` — limite diário do chat de IA por pessoa |
 | `PLATFORM_ADMIN_EMAILS` | Servidor | E-mails da equipe da agência, separados por vírgula. Libera o painel **Clientes (agência)** |
 | `ANTHROPIC_MODEL` | Servidor, opcional | `claude-haiku-5-5` (padrão); o modelo salvo no agente tem precedência. Agentes em Haiku 4.5 usam Haiku 5.5 |
 | `WHATSAPP_EVO_URL` | Servidor | `https://evo.madebyfelipe.agency` |
