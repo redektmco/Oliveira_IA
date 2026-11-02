@@ -88,3 +88,7 @@ Nova tela **Automações**: gatilho (registro criado/atualizado, mensagem recebi
 ### Tom de voz e pesos do agente
 
 O editor de agentes tem tom de voz e pesos dos quatro critérios de qualificação (a nota do lead é a média ponderada). Exige `supabase/migrations/202611060009_agent_tone_weights.sql`, aditiva e idempotente: `SUPABASE_PROJECT_REF=mdzflolthybnzewhpxno npm run agent-tone:check` / `agent-tone:migrate`. Aplicada no projeto Felipa IA em 02/11/2026. Agentes existentes ficam consultivos, com peso 25 em cada critério (mesmo resultado de antes).
+
+## Planos e preços
+
+A página comercial está em `/precos` (alias `/pricing`), ligada à navegação e à oferta da landing page. Apresenta os quatro planos propostos da V4, comparação, implantação inicial, tarifas da Meta e assessoria separadas, e simulação de pacotes extras. Os dados ficam em `src/pricing/plans.ts`. Os preços são propostas sujeitas à validação comercial; a página não ativa assinaturas, altera franquias de produção ou configura preços na Stripe. A simulação financeira interna e a comparação com concorrentes não são publicadas.

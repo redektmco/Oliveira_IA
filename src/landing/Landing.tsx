@@ -131,7 +131,8 @@ export default function Landing() {
     <header className="nav" data-nav>
       <a href="/" className="nav-logo" aria-label="V4 Oliveira & Co"><img src="/brand/logo-dark.svg" alt="V4 Oliveira & Co" /></a>
       <nav className={menu ? 'open' : ''} aria-label="Principal">
-        {[['#solucao', 'Solução'], ['#como-funciona', 'Como funciona'], ['#resultados', 'Resultados'], ['#oferta', 'Oferta'], ['#faq', 'FAQ']].map(([h, l]) => <a key={h} href={h} onClick={go(h)} className="nl"><span>{l}</span></a>)}
+        {[['#solucao', 'Solução'], ['#como-funciona', 'Como funciona'], ['#resultados', 'Resultados'], ['#faq', 'FAQ']].map(([h, l]) => <a key={h} href={h} onClick={go(h)} className="nl"><span>{l}</span></a>)}
+        <a href="/precos" className="nl"><span>Planos e preços</span></a>
       </nav>
       <a href={APP} className="nav-cta" data-magnetic="0.25">Agendar demonstração</a>
       <button className="burger" aria-label="Menu" aria-expanded={menu} onClick={() => setMenu(!menu)}><i /><i /></button>
@@ -278,10 +279,10 @@ export default function Landing() {
         <div className="spin" />
         <div className="oleft">
           <span className="tag">(05) A oferta</span>
-          <h2>Um time de SDR inteiro, pronto em 7 dias.</h2>
-          <p>SDR com IA, CRM completo e implantação guiada em um único plano. Sem fidelidade e com teste de 7 dias para você ver o resultado antes de decidir.</p>
-          <Cta className="primary" label="Testar">Quero testar por 7 dias</Cta>
-          <small>Sem cartão para começar. Cancele quando quiser.</small>
+          <h2>Um plano para cada operação comercial.</h2>
+          <p>Do CRM ao SDR IA: planos propostos a partir de R$ 199/mês, com franquias claras de leads, funcionalidades e automação. O SDR IA de R$ 449/mês é o ponto de partida para qualificar e agendar.</p>
+          <a href="/precos" className="btn primary">Comparar planos e preços <Icon name="arrow" size={18} /></a>
+          <small>Preços sujeitos à validação comercial. Implantação e tarifas da Meta à parte.</small>
         </div>
         <ul className="olist">
           {[['SDR com IA treinado no seu negócio', 'Tom de voz, FAQs e regras de qualificação'], ['WhatsApp, Instagram e e-mail', 'Todos os canais em uma só caixa de entrada'], ['CRM completo', 'Funis, contatos, ficha do cliente e score'], ['Agendamento automático', 'Integrado ao Google Agenda do seu time'], ['Follow-ups e API aberta', 'Cadências automáticas, API e webhooks'], ['Implantação guiada e suporte humano', 'Do primeiro dia ao go-live']].map(([t, d], i) =>
@@ -315,7 +316,7 @@ export default function Landing() {
 
     <footer className="foot">
       <img src="/brand/logo-light.svg" alt="V4 Oliveira & Co" />
-      <nav>{[['#solucao', 'Solução'], ['#como-funciona', 'Como funciona'], ['#oferta', 'Oferta'], ['#faq', 'FAQ']].map(([h, l]) => <a key={h} href={h} onClick={go(h)}>{l}</a>)}<a href={APP}>Entrar na plataforma</a></nav>
+      <nav>{[['#solucao', 'Solução'], ['#como-funciona', 'Como funciona'], ['#faq', 'FAQ']].map(([h, l]) => <a key={h} href={h} onClick={go(h)}>{l}</a>)}<a href="/precos">Planos e preços</a><a href={APP}>Entrar na plataforma</a></nav>
       <small>© {new Date().getFullYear()} V4 Oliveira &amp; Co. Todos os direitos reservados.</small>
     </footer>
   </div>;
