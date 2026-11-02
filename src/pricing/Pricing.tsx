@@ -1,8 +1,8 @@
 import {useEffect,useState} from 'react';
 import {Icon,type IconName} from '../components/ui';
 import {brl,number,commercialPlans,estimatePlan,expansion,type CommercialPlanId} from './plans';
-import '../index.css';
-import '../styles/brand.css';
+import {useCookieConsent} from '../marketing/CookieConsent';
+import {readSimulationPreferences,saveSimulationPreferences} from '../marketing/consent';
 import './pricing.css';
 
 const comparisons = [
@@ -27,8 +27,11 @@ const faqs = [
  ['Esses valores já são condições de contratação?','São preços mensais propostos, sujeitos à validação comercial. Esta página permite comparar e simular os planos; não ativa uma assinatura nem realiza cobranças. Os recursos e limites devem ser confirmados na proposta comercial.'],
 ];
 export default function Pricing(){
- const [selected,setSelected]=useState<CommercialPlanId>('sdr');
- const [packages,setPackages]=useState(0);
+ const {consent}=useCookieConsent();
+ const [remembered]=useState(readSimulationPreferences);
+ const [selected,setSelected]=useState<CommercialPlanId>(remembered?.plan??'sdr');
+ const [packages,setPackages]=useState(remembered?.packages??0);
+ useEffect(()=>{if(consent?.preferences)saveSimulationPreferences({plan:selected,packages});},[consent,selected,packages]);
  const [status,setStatus]=useState('');
  const estimate=estimatePlan(selected,packages);
  const expandable=selected==='sdr'||selected==='performance';
@@ -39,8 +42,6 @@ export default function Pricing(){
   try{await navigator.clipboard.writeText(text);setStatus('Simulação copiada.');}catch{const url=URL.createObjectURL(new Blob([text],{type:'text/plain;charset=utf-8'}));const link=document.createElement('a');link.href=url;link.download='v4-simulacao-do-plano.txt';link.click();URL.revokeObjectURL(url);setStatus('Simulação baixada em arquivo de texto.');}
  }
  return <div className="v4p">
-  <a className="v4p-skip" href="#v4p-main">Pular para o conteúdo</a>
-  <header className="v4p-nav"><a href="/" aria-label="V4 Oliveira & Co, início"><img src="/brand/logo-dark.svg" alt="V4 Oliveira & Co"/></a><nav aria-label="Navegação principal"><a href="/">Solução</a><a href="/precos" aria-current="page">Planos e preços</a><a href="/demo">Demonstração <Icon name="arrow" size={15}/></a></nav><a className="v4p-login" href="/app">Entrar <Icon name="arrow" size={16}/></a></header>
   <main id="v4p-main">
    <section className="v4p-hero v4p-wrap"><span className="v4p-eyebrow"><i/> SDR IA + CRM · V4 OLIVEIRA & CO</span><h1>Mais conversas qualificadas.<br/><em>Um plano para cada operação.</em></h1><p>Atendimento, qualificação e CRM conectados à sua operação comercial.<br/>Escolha pelo volume de leads e pelo nível de automação que você precisa.</p><div className="v4p-hero-notes"><span><Icon name="check" size={15}/>Mensalidades em reais</span><span><Icon name="check" size={15}/>Franquias claras</span><span><Icon name="check" size={15}/>Expansão conforme a demanda</span></div><small>Preços propostos · sujeitos à validação comercial</small></section>
    <section className="v4p-plans v4p-wrap" aria-label="Planos e preços mensais">{commercialPlans.map(plan=><article key={plan.id} className={`v4p-plan ${plan.id==='sdr'?'v4p-featured':''}`} aria-labelledby={`plan-${plan.id}`}>
@@ -65,6 +66,6 @@ export default function Pricing(){
    </section>
    <section className="v4p-section v4p-faq v4p-wrap" id="duvidas"><div><span className="v4p-eyebrow">SEM LETRAS MIÚDAS</span><h2>As regras claras.<br/>Desde a primeira conversa.</h2><p>Entenda a franquia, a implantação<br/>e os serviços que ficam à parte.</p></div><div>{faqs.map(([question,answer],i)=><details key={question} open={i===0?true:undefined}><summary>{question}<Icon name="plus" size={18}/></summary><p>{answer}</p></details>)}</div></section>
    <section className="v4p-closing v4p-wrap"><div><span className="v4p-eyebrow">CONHEÇA A OPERAÇÃO NA PRÁTICA</span><h2>Seu próximo SDR<br/>começa aqui.</h2><p>Veja como atendimento, qualificação e CRM se conectam.</p></div><a className="v4p-button" href="/demo">Explorar demonstração<Icon name="arrow" size={20}/></a></section>
-  </main><footer className="v4p-footer v4p-wrap"><a href="/" aria-label="V4 Oliveira & Co, início"><img src="/brand/logo-dark.svg" alt="V4 Oliveira & Co"/></a><nav aria-label="Rodapé"><a href="/">Conheça a solução</a><a href="/app#settings/billing">Já sou cliente</a><a href="#duvidas">Dúvidas</a></nav><small>SDR IA + CRM · V4 Oliveira & Co<br/>Condições comerciais propostas, sujeitas à validação.</small></footer>
+  </main>
  </div>;
 }

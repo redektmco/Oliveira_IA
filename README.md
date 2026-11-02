@@ -92,3 +92,9 @@ O editor de agentes tem tom de voz e pesos dos quatro critérios de qualificaç�
 ## Planos e preços
 
 A página comercial está em `/precos` (alias `/pricing`), ligada à navegação e à oferta da landing page. Apresenta os quatro planos propostos da V4, comparação, implantação inicial, tarifas da Meta e assessoria separadas, e simulação de pacotes extras. Os dados ficam em `src/pricing/plans.ts`. Os preços são propostas sujeitas à validação comercial; a página não ativa assinaturas, altera franquias de produção ou configura preços na Stripe. A simulação financeira interna e a comparação com concorrentes não são publicadas.
+
+## Site público, políticas e consentimento
+
+O `PublicLayout` compartilha header e rodapé entre landing, preços e central de transparência. Não é montado em `/app` nem em `/demo`. Políticas em `/legal`, `/privacidade`, `/lgpd`, `/cookies`, `/reembolso` e `/termos-de-uso`. A responsável informada é Oliveira Assessoria de Marketing Ltda., CNPJ 53.328.793/0001-39. O canal público informado é `ktm.ferramentas@v4company.com` e pode ser substituído em `VITE_LEGAL_CONTACT_EMAIL`. Identidade e contato são configurados em `src/legal/identity.ts`.
+
+O consentimento do site público permite recusar, aceitar ou personalizar a persistência opcional da simulação de preços; não é aceite de termos nem autorização para publicidade. Analytics e publicidade não estão integrados. A escolha é versionada e dura até 180 dias. Revogar remove somente `v4-public-simulation-v1`; contas, sessões, CRM e dados de demonstração não são apagados. Novos fornecedores, finalidades ou categorias exigem atualização da política, do bloqueio e da versão do consentimento antes da ativação. Inter e Bricolage são servidas localmente em `public/fonts` com suas licenças.

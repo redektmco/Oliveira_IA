@@ -1,4 +1,6 @@
 import {test,expect} from '@playwright/test';
+import {createConsent,CONSENT_KEY} from '../../src/marketing/consent';
+test.beforeEach(async({page})=>{await page.addInitScript(({key,value})=>localStorage.setItem(key,value),{key:CONSENT_KEY,value:JSON.stringify(createConsent(false))});});
 
 test('plano SDR e expansão mostram os totais sem iniciar contratação',async({page})=>{
  const chargeRequests:string[]=[];
@@ -32,7 +34,7 @@ test('simulação pode ser copiada e mantém condições comerciais',async({page
  await page.goto('/pricing');
  await page.getByLabel('Pacotes adicionais de capacidade').selectOption('1');
  await page.getByRole('button',{name:'Copiar simulação'}).click();
- await expect(page.getByRole('status')).toHaveText('Simulação copiada.');
+ await expect(page.locator('.v4p-copy-status')).toHaveText('Simulação copiada.');
  const text=await page.evaluate(()=>navigator.clipboard.readText());
  expect(text).toContain('598');expect(text).toContain('1.000 leads');
  expect(text).toContain('Tarifas da Meta');expect(text).toContain('sujeitos à validação comercial');
@@ -50,14 +52,14 @@ test('página funciona em telas pequenas e tem links para o projeto existente',a
  }
  await expect(page.getByRole('link',{name:'Já sou cliente'})).toHaveAttribute('href','/app#settings/billing');
  await expect(page.getByRole('link',{name:'Explorar demonstração'})).toHaveAttribute('href','/demo');
- await expect(page.getByRole('navigation',{name:'Navegação principal'}).getByRole('link',{name:'Planos e preços'})).toHaveAttribute('aria-current','page');
+ await expect(page.getByRole('navigation',{name:'Navegação principal do site'}).getByRole('link',{name:'Planos e preços'})).toHaveAttribute('aria-current','page');
  expect(errors).toEqual([]);
 });
 
 test('landing encaminha para os planos propostos',async({page})=>{
  await page.emulateMedia({reducedMotion:'reduce'});
  await page.goto('/');
- await page.getByRole('navigation',{name:'Principal'}).getByRole('link',{name:'Planos e preços'}).click();
+ await page.getByRole('navigation',{name:'Navegação principal do site'}).getByRole('link',{name:'Planos e preços'}).click();
  await expect(page).toHaveURL(/\/precos$/);
  await expect(page.getByRole('heading',{name:'SDR IA',exact:true})).toBeVisible();
 });

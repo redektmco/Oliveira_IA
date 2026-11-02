@@ -141,7 +141,7 @@ export function startFx(root: HTMLElement): Fx {
       mx = (e.clientX / window.innerWidth - 0.5) * 2; my = (e.clientY / window.innerHeight - 0.5) * 2;
       root.style.setProperty('--mx', mx.toFixed(3)); root.style.setProperty('--my', my.toFixed(3));
       root.style.setProperty('--gx', `${e.clientX}px`); root.style.setProperty('--gy', `${e.clientY}px`);
-      cur?.classList.add('show');
+      cur?.classList.toggle('show', root.contains(e.target as Node));
       const t = (e.target as HTMLElement).closest<HTMLElement>('a,button,[data-hover],[data-cursor-label]');
       const lbl = t?.closest<HTMLElement>('[data-cursor-label]')?.dataset.cursorLabel || '';
       cur?.classList.toggle('big', Boolean(t));

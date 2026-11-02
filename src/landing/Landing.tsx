@@ -101,11 +101,10 @@ function ChatDemo() {
 }
 
 export default function Landing() {
-  const rootRef = useRef<HTMLDivElement>(null);
+  const rootRef = useRef<HTMLElement>(null);
   const fx = useRef<Fx | null>(null);
   const [ready, setReady] = useState(false);
   const [open, setOpen] = useState(0);
-  const [menu, setMenu] = useState(false);
 
   useEffect(() => {
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -119,24 +118,20 @@ export default function Landing() {
   }, []);
   useEffect(() => { fx.current?.lock(!ready); document.documentElement.style.overflow = ready ? '' : 'hidden'; return () => { document.documentElement.style.overflow = ''; }; }, [ready]);
   useEffect(() => { document.title = 'V4 Oliveira & Co · SDR com IA + CRM'; }, []);
+  useEffect(() => {
+    if (!ready) return;
+    const followHash = () => {if (['#solucao','#como-funciona','#resultados','#oferta','#faq'].includes(window.location.hash)) fx.current?.scrollTo(window.location.hash);};
+    followHash(); window.addEventListener('hashchange',followHash);
+    return () => window.removeEventListener('hashchange',followHash);
+  }, [ready]);
 
-  const go = (id: string) => (e: React.MouseEvent) => { e.preventDefault(); setMenu(false); fx.current?.scrollTo(id); };
+  const go = (id: string) => (e: React.MouseEvent) => { e.preventDefault(); fx.current?.scrollTo(id); };
 
-  return <div className={`lp ${ready ? 'ready' : ''}`} ref={rootRef}>
+  return <main className={`lp ${ready ? 'ready' : ''}`} ref={rootRef}>
     <Preloader done={ready} />
     <div className="progress" data-progress />
     <div className="cursor" data-cursor aria-hidden="true"><span /></div>
     <div className="grain" aria-hidden="true" />
-
-    <header className="nav" data-nav>
-      <a href="/" className="nav-logo" aria-label="V4 Oliveira & Co"><img src="/brand/logo-dark.svg" alt="V4 Oliveira & Co" /></a>
-      <nav className={menu ? 'open' : ''} aria-label="Principal">
-        {[['#solucao', 'Solução'], ['#como-funciona', 'Como funciona'], ['#resultados', 'Resultados'], ['#faq', 'FAQ']].map(([h, l]) => <a key={h} href={h} onClick={go(h)} className="nl"><span>{l}</span></a>)}
-        <a href="/precos" className="nl"><span>Planos e preços</span></a>
-      </nav>
-      <a href={APP} className="nav-cta" data-magnetic="0.25">Agendar demonstração</a>
-      <button className="burger" aria-label="Menu" aria-expanded={menu} onClick={() => setMenu(!menu)}><i /><i /></button>
-    </header>
 
     {/* HERO */}
     <section className="hero">
@@ -314,10 +309,5 @@ export default function Landing() {
       </div>
     </section>
 
-    <footer className="foot">
-      <img src="/brand/logo-light.svg" alt="V4 Oliveira & Co" />
-      <nav>{[['#solucao', 'Solução'], ['#como-funciona', 'Como funciona'], ['#faq', 'FAQ']].map(([h, l]) => <a key={h} href={h} onClick={go(h)}>{l}</a>)}<a href="/precos">Planos e preços</a><a href={APP}>Entrar na plataforma</a></nav>
-      <small>© {new Date().getFullYear()} V4 Oliveira &amp; Co. Todos os direitos reservados.</small>
-    </footer>
-  </div>;
+  </main>;
 }
