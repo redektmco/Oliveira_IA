@@ -99,7 +99,10 @@ export function startFx(root: HTMLElement): Fx {
         const r = el.getBoundingClientRect();
         const track = el.querySelector<HTMLElement>('[data-track]');
         if (!track) continue;
-        const dist = track.scrollWidth - el.clientWidth;
+        // Distância medida na área visível do pin (largura máxima e padding), não na seção inteira:
+        // em telas largas a seção é maior que o pin e o último cartão ficava cortado sem deslizar.
+        const pin = track.parentElement ?? el, pcs = getComputedStyle(pin);
+        const dist = track.scrollWidth - (pin.clientWidth - parseFloat(pcs.paddingLeft) - parseFloat(pcs.paddingRight));
         const p = clamp(-r.top / (r.height - vh));
         el.style.setProperty('--hp', p.toFixed(3));
         if (dist > 0 && window.innerWidth > 900) track.style.transform = `translate3d(${(-dist * p).toFixed(1)}px,0,0)`;

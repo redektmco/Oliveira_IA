@@ -49,6 +49,12 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .tone-2 { background: var(--success-soft)!important; color: var(--success-ink)!important; } .tone-3 { background: var(--violet-soft)!important; color: #7e22ce!important; }
 .tone-4 { background: #fff7ed!important; color: #c2410c!important; }
 .main-shell { width: calc(100% - 244px); margin-left: 240px; min-width: 0; }
+/* Telas de altura cheia (assistente e caixa de entrada) ocupam o espaço que sobra abaixo do topo,
+   da faixa de demonstração e de avisos de erro, sem criar rolagem extra na página. */
+.main-shell { display: flex; flex-direction: column; min-height: 100dvh; }
+main.main-fill { flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; }
+main.main-fill > .home { flex: 1 0 auto; min-height: 0; }
+main.main-fill > .ai-inbox { flex: 1 1 0; height: auto; min-height: 480px; }
 .topbar { height: 56px; padding: 0 24px; background: var(--topbar-bg); backdrop-filter: blur(8px); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; position: sticky; top: 0; z-index: 20; }
 .breadcrumb { display: flex; align-items: center; gap: 6px; font-size: var(--fs-sm); min-width: 200px; }
 .breadcrumb span { color: var(--muted); }

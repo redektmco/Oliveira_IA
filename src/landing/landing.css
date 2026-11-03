@@ -171,11 +171,11 @@ li.rv,p.rv.spl{will-change:transform}
 
 /* how — scroll horizontal */
 .how{height:300vh;position:relative}
-.how-pin{position:sticky;top:0;height:100vh;display:flex;flex-direction:column;justify-content:center;overflow:hidden;padding:0 clamp(20px,3.4vw,48px);max-width:1536px;margin:0 auto;gap:40px}
+.how-pin{position:sticky;top:0;height:100vh;display:flex;flex-direction:column;justify-content:center;overflow:hidden;padding:88px clamp(20px,3.4vw,48px) 24px;max-width:1536px;margin:0 auto;gap:40px}
 .how .head{margin:0}
 .hbar{height:2px;background:rgba(0,0,0,.12);position:relative}.hbar i{position:absolute;inset:0;background:var(--red);transform-origin:left;transform:scaleX(var(--hp,0))}
 .track{display:flex;gap:20px;width:max-content;will-change:transform}
-.step{--sx:50%;--sy:50%;width:min(440px,78vw);min-height:360px;border-radius:32px;background:#fff;padding:36px;display:flex;flex-direction:column;gap:14px;position:relative;overflow:hidden;box-shadow:0 1px 0 rgba(0,0,0,.04),0 30px 60px -30px rgba(0,0,0,.2)}
+.step{--sx:50%;--sy:50%;width:min(440px,78vw);min-height:clamp(260px,calc(100vh - 360px),360px);border-radius:32px;background:#fff;padding:36px;display:flex;flex-direction:column;gap:14px;position:relative;overflow:hidden;box-shadow:0 1px 0 rgba(0,0,0,.04),0 30px 60px -30px rgba(0,0,0,.2)}
 .step::before{background:radial-gradient(420px circle at var(--sx) var(--sy),rgba(225,29,72,.12),transparent 60%)}.step:hover::before{opacity:1}
 .step>*{position:relative}
 .num{font-size:96px;line-height:1;letter-spacing:-.05em;color:var(--red)}
@@ -232,7 +232,7 @@ blockquote{margin:0;font:700 clamp(24px,2.9vw,40px)/1.18 'Bricolage Grotesque',s
 .final{background:var(--red);color:#fff;border-radius:48px 48px 0 0;padding:clamp(60px,8vw,110px) clamp(20px,3.4vw,48px) clamp(70px,8vw,120px);margin-top:clamp(40px,6vw,100px);position:relative;overflow:hidden}
 .fm{white-space:nowrap;overflow:hidden;font:700 clamp(18px,2vw,28px) 'Bricolage Grotesque';opacity:.85;margin-bottom:clamp(40px,6vw,80px)}
 .fm>div{display:inline-flex;will-change:transform}.fm em{font-style:normal;opacity:.6}
-.fh{font-size:clamp(56px,12.5vw,190px);line-height:.92;letter-spacing:-.055em;max-width:1440px;margin:0 auto}
+.lp .fh{font-size:clamp(56px,min(12.5vw,17vh),190px);line-height:.92;letter-spacing:-.055em;max-width:1440px;margin:0 auto}
 .fh .sw{display:block}
 .frow{max-width:1440px;margin:clamp(36px,5vw,64px) auto 0;display:flex;justify-content:space-between;align-items:center;gap:32px;flex-wrap:wrap}
 .frow p{max-width:560px;font-size:clamp(17px,1.6vw,22px);line-height:1.5}
@@ -283,7 +283,7 @@ blockquote{margin:0;font:700 clamp(24px,2.9vw,40px)/1.18 'Bricolage Grotesque',s
   .tr{padding:16px 0;font-size:14px}
   .ocard{padding:26px 22px;gap:28px;border-radius:28px}.ocard::after{border-radius:27px}.oleft h2{font-size:34px}.oleft p{font-size:15px}.olist b{font-size:16px}
   .q button{padding:22px 0;gap:14px}.pm{width:38px;height:38px}.ans p{font-size:16px}
-  .final{padding:48px 20px 64px;border-radius:28px 28px 0 0}.fh{font-size:clamp(44px,15vw,72px)}.frow{flex-direction:column;align-items:flex-start;gap:24px}.frow .btn{width:100%}
+  .final{padding:48px 20px 64px;border-radius:28px 28px 0 0}.lp .fh{font-size:clamp(44px,15vw,72px)}.frow{flex-direction:column;align-items:flex-start;gap:24px}.frow .btn{width:100%}
   .foot{flex-direction:column;align-items:flex-start;padding:36px 20px}.foot nav{gap:16px 24px}
 }
 @media (prefers-reduced-motion:reduce){

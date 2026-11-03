@@ -18,12 +18,14 @@ import Settings from './pages/Settings';
 import Workflows from './pages/Workflows';
 import Agency from './pages/Agency';
 import { ThemeToggle } from './components/ThemeToggle';
+import { WorkspaceSwitcher } from './components/WorkspaceSwitcher';
 import './lib/theme';
 import './index.css';
 import './styles/system.css';
 import './styles/theme.css';
 import './app.css';
 import './styles/brand.css';
+import './styles/workspace-switcher.css';
 
 const groups: {label: string; items: {id: string; label: string; icon: IconName}[]}[] = [
   {label: 'OPERAÇÃO COMERCIAL', items: [{id:'overview',label:'Visão geral',icon:'grid'},{id:'inbox',label:'Caixa de entrada',icon:'message'},{id:'contacts',label:'Contatos / CRM',icon:'users'},{id:'pipeline',label:'Oportunidades',icon:'pipeline'},{id:'meetings',label:'Reuniões',icon:'calendar'},{id:'workflows',label:'Automações',icon:'bolt'}]},
@@ -65,7 +67,7 @@ function Shell({demo, user, onExit}: {demo: boolean; user: User | null; onExit: 
     return () => { document.removeEventListener('keydown', key); document.body.style.overflow = previousOverflow; menuButton.current?.focus(); };
   }, [open, mobile]);
   const [query, setQuery] = useState('');
-  const {error,loading,refresh,data,workspaceName,logo,workspaces,ownerId,switchWorkspace,platformAdmin} = useWorkspace();
+  const {error,loading,refresh,data,workspaceName,platformAdmin} = useWorkspace();
   const navGroups = platformAdmin ? [{label:'AGÊNCIA',items:[agencyItem]},...groups] : groups;
   const [retryError,setRetryError] = useState('');
   useEffect(() => { const listener = () => { setPage(hashPage()); setContactId(window.location.hash.split('/')[1] || ''); }; window.addEventListener('hashchange',listener); return () => window.removeEventListener('hashchange',listener); }, []);
@@ -78,13 +80,13 @@ function Shell({demo, user, onExit}: {demo: boolean; user: User | null; onExit: 
     <a href="#main-content" className="skip-link">Pular para o conteúdo</a>
     <aside ref={sidebar} inert={mobile && !open} className={`sidebar ${open ? 'mobile-open' : ''}`} aria-label="Navegação principal">
       <div className="brand"><img className="brand-logo on-dark" src="/brand/logo-light.svg" alt="V4 Oliveira & Co"/><img className="brand-logo on-light" src="/brand/logo-dark.svg" alt="V4 Oliveira & Co"/><button className="mobile-close icon-btn" aria-label="Fechar menu" onClick={() => setOpen(false)}>×</button></div>
-      <div className="org-switcher">{logo?<img className="org-avatar" src={logo} alt=""/>:<span className="org-avatar">{workspaceName.split(" ").filter(Boolean).map(w=>w[0]).slice(0,2).join("")}</span>}<span><b>{workspaceName}</b>{workspaces.length>1?<select aria-label="Selecionar workspace" value={ownerId} onChange={e=>switchWorkspace(e.target.value)}>{workspaces.map(w=><option key={w.id} value={w.id}>{w.name}</option>)}</select>:<small>{demo ? 'Demonstração local' : platformAdmin ? 'Agência' : 'Meu workspace'}</small>}</span><Icon name="building" size={15}/></div>
+      <WorkspaceSwitcher onManage={() => go('agency')}/>
       <nav>{navGroups.map(group => <div className="nav-group" key={group.label}><div className="nav-label">{group.label}</div>{group.items.map(item => <button key={item.id} className={page === item.id ? 'active' : ''} aria-current={page === item.id ? 'page' : undefined} onClick={() => go(item.id)}><Icon name={item.icon}/><span>{item.label}</span></button>)}{group.label === 'GESTÃO' && <button onClick={() => window.location.assign('/precos')}><Icon name="card"/><span>Preços</span></button>}</div>)}</nav>
       <div className="sidebar-footer"><button className="help-card" onClick={() => go('settings')}><Icon name="spark"/><div><b>Sua operação começa aqui</b><span>Conexões e próximos passos</span></div><Icon name="chevron" size={14}/></button><button className="user-profile" onClick={onExit} title="Sair"><Avatar name={name}/><span><b>{name}</b><small>{demo ? 'Sair da demonstração' : 'Sair da conta'}</small></span><Icon name="arrow" size={16}/></button></div>
     </aside>
     <div className="main-shell"><header className="topbar"><button ref={menuButton} className="mobile-menu" aria-label="Abrir menu" aria-expanded={open} onClick={() => setOpen(true)}>☰</button><div className="breadcrumb">{profileContact || profileDeal ? <a href={profileContact ? '#contacts' : '#pipeline'}>{profileContact ? 'Contatos' : 'Oportunidades'}</a> : <span>{workspaceName}</span>}<Icon name="chevron" size={13}/><b>{profileContact?.name || profileDeal?.title || label}</b></div><form className="global-search" onSubmit={e => {e.preventDefault(); go('contacts');}}><Icon name="search" size={16}/><input aria-label="Buscar contatos" placeholder="Buscar contatos…" value={query} onChange={e => setQuery(e.target.value)}/><button aria-label="Pesquisar" className="search-submit">↵</button></form><Notifications/><ThemeToggle/><button className="top-avatar" title={name} aria-label="Ir para configurações" onClick={() => go('settings')}>{name.split(/[@.\s_-]+/).filter(Boolean).map(part => part[0]).slice(0,2).join('').toUpperCase() || 'V'}</button></header>
       {demo && <div className="demo-banner"><span><b>Demonstração</b> · Dados locais de exemplo. A IA e os canais externos não estão conectados.</span><button onClick={onExit}>Conectar minha conta →</button></div>}
-      <main id="main-content" tabIndex={-1}>{error && <div className="error-banner" role="alert"><span>{error} {retryError}</span><Button disabled={loading} onClick={() => {setRetryError(''); refresh().catch(() => setRetryError('A conexão continua indisponível.'));}}>Tentar novamente</Button></div>}
+      <main id="main-content" tabIndex={-1} className={page === 'overview' || page === 'inbox' ? 'main-fill' : undefined}>{error && <div className="error-banner" role="alert"><span>{error} {retryError}</span><Button disabled={loading} onClick={() => {setRetryError(''); refresh().catch(() => setRetryError('A conexão continua indisponível.'));}}>Tentar novamente</Button></div>}
         {loading && !error && <div role="status" className="loading-bar">Atualizando dados…</div>}
         {page === 'overview' ? <Overview go={go} userName={user?.email ? user.email.split('@')[0].split(/[._-]+/)[0].replace(/^./, c => c.toUpperCase()) : undefined}/> : page === 'contacts' ? <Contacts search={query}/> : page === 'pipeline' ? <Pipeline/> : page === 'meetings' ? <Meetings/> : page === 'agents' ? <Agents/> : page === 'knowledge' ? <Knowledge/> : page === 'playground' ? <Playground/> : page === 'inbox' ? <Inbox/> : page === 'workflows' ? <Workflows routeId={contactId} go={go}/> : page === 'agency' ? <Agency/> : <Settings section={page}/>}
       </main>

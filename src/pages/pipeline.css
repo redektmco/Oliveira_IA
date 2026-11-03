@@ -113,7 +113,8 @@ textarea.form-control { height: auto; padding: var(--sp-2) 10px; resize: vertica
 .opp-banner.success { background: var(--success-soft); color: var(--success-ink); border: 1px solid var(--success-line); }
 .record-columns { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: var(--sp-4); align-items: start; }
 .record-tabs-card { overflow: hidden; }
-.record-tabs { display: flex; gap: var(--sp-1); padding: 0 var(--sp-3); border-bottom: 1px solid var(--border); overflow-x: auto; }
+.record-tabs { display: flex; gap: var(--sp-1); padding: 0 var(--sp-3); border-bottom: 1px solid var(--border); overflow-x: auto; overflow-y: hidden; scrollbar-width: none; }
+.record-tabs::-webkit-scrollbar { display: none; }
 .record-tabs button { height: 40px; display: inline-flex; align-items: center; gap: 6px; padding: 0 var(--sp-2); border: 0; border-bottom: 2px solid transparent; background: none; color: var(--muted); font-size: var(--fs-md); font-weight: 500; white-space: nowrap; }
 .record-tabs button.active { color: var(--text); border-bottom-color: var(--brand); }
 .record-tabs button span { font-size: var(--fs-xs); background: var(--surface-3); border-radius: var(--radius-sm); padding: 0 6px; line-height: 18px; }
