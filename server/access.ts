@@ -34,10 +34,12 @@ export function ipAllowed(ip:string,rules:string[]){if(!rules.length)return true
  return (toNum(network)&mask)===(toNum(ip)&mask);
 });}
 export type Access={db:SupabaseClient;user:User;ownerId:string;role:WorkspaceRole;settings:WorkspaceSettings;sessionId:string;token:string;ip:string;platformAdmin?:boolean};
-/** Equipe da agência: e-mails confirmados listados em PLATFORM_ADMIN_EMAILS (separados por vírgula), somente no servidor. */
+/** Equipe da agência: e-mails confirmados listados em PLATFORM_ADMIN_EMAILS (separados por vírgula), somente no servidor.
+ * Uma entrada iniciada por @ libera o domínio inteiro (ex.: @v4company.com), sem subdomínios. */
 export function isPlatformAdmin(user:Pick<User,'email'|'email_confirmed_at'>,env:Record<string,string|undefined>=process.env){
  const email=user.email?.trim().toLowerCase();if(!email||!user.email_confirmed_at)return false;
- return (env.PLATFORM_ADMIN_EMAILS||'').split(/[,;\s]+/).map(e=>e.trim().toLowerCase()).filter(Boolean).includes(email);
+ const domain=email.slice(email.lastIndexOf('@'));
+ return (env.PLATFORM_ADMIN_EMAILS||'').split(/[,;\s]+/).map(e=>e.trim().toLowerCase()).filter(Boolean).some(e=>e.startsWith('@')?e.length>1&&e===domain:e===email);
 }
 export async function access(req:VercelRequest,options:{mfaSetup?:boolean}={}):Promise<Access>{
  const token=parseBearerToken(req.headers.authorization),db=adminDb();

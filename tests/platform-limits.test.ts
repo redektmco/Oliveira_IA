@@ -93,6 +93,14 @@ test('only confirmed agency e-mails are platform admins', async () => {
   assert.equal(isPlatformAdmin({email: 'equipe@agencia.com', email_confirmed_at: undefined}, env), false);
   assert.equal(isPlatformAdmin({email: 'cliente@empresa.com', email_confirmed_at: '2026-01-01'}, env), false);
   assert.equal(isPlatformAdmin({email: 'equipe@agencia.com', email_confirmed_at: '2026-01-01'}, {}), false);
+  const domain = {PLATFORM_ADMIN_EMAILS: 'dono@gmail.com, @V4Company.com'};
+  assert.equal(isPlatformAdmin({email: 'Qualquer@v4company.com', email_confirmed_at: '2026-01-01'}, domain), true);
+  assert.equal(isPlatformAdmin({email: 'dono@gmail.com', email_confirmed_at: '2026-01-01'}, domain), true);
+  assert.equal(isPlatformAdmin({email: 'outro@gmail.com', email_confirmed_at: '2026-01-01'}, domain), false);
+  assert.equal(isPlatformAdmin({email: 'x@falsov4company.com', email_confirmed_at: '2026-01-01'}, domain), false);
+  assert.equal(isPlatformAdmin({email: 'x@sub.v4company.com', email_confirmed_at: '2026-01-01'}, domain), false);
+  assert.equal(isPlatformAdmin({email: 'x@v4company.com', email_confirmed_at: undefined}, domain), false);
+  assert.equal(isPlatformAdmin({email: 'x@v4company.com', email_confirmed_at: '2026-01-01'}, {PLATFORM_ADMIN_EMAILS: '@'}), false);
   // A client (not in the list) cannot use any agency action.
   await assert.rejects(platformAction({platformAdmin: false} as any, {action: 'platform.list'}), /equipe da agência/);
 });
